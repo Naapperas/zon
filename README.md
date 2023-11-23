@@ -1,2 +1,2 @@
 # pod
-Zod-like validator library for python
+Zod-like validator library for Python

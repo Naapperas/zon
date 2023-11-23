@@ -1,4 +1,4 @@
-#!/home/naapperas/workspace/validator.py/bin/python
+#!/home/naapperas/workspace/pod/bin/python
 # -*- coding: utf-8 -*-
 import re
 import sys
