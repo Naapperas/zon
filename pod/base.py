@@ -22,6 +22,8 @@ class Pod(ABC):
         self.validators: dict[str, ValidationRule] = {}
         """validators that will run when 'validate' is invoked."""
 
+        self._setup()
+
     def _add_error(self, error: ValidationError):
         self.errors.append(error)
 
