@@ -70,7 +70,7 @@ class Pod(ABC):
             NotImplementedError: the default implementation of this method
             is not implemented on base Pod class.
         """
-        if isinstance(self, Pod):
+        if type(self) is Pod: # pylint: disable=unidiomatic-typecheck
             raise NotImplementedError(
                 "validate() method not implemented on base Pod class"
             )
