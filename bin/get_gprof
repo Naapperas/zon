@@ -28,6 +28,7 @@ edges below 1% threshold
 '''
 
 import sys
+
 # grab args for gprof2dot
 args = sys.argv[1:-1]
 args = ' '.join(args)
@@ -44,10 +45,12 @@ obj = eval(obj[-1])
 objtype = type(obj)
 name = getattr(objtype, '__name__', getattr(objtype, '__class__', objtype))
 
+import cProfile
+import os
+
 # profile dumping an object
 import dill
-import os
-import cProfile
+
 #name = os.path.splitext(os.path.basename(__file__))[0]
 cProfile.run("dill.dumps(obj)", filename="%s.prof" % name)
 msg = "gprof2dot -f pstats %s %s.prof | dot -Tpng -o %s.call.png" % (args, name, name)
@@ -56,6 +59,7 @@ os.system(msg)
 # get stats
 f_prof = "%s.prof" % name
 import pstats
+
 stats = pstats.Stats(f_prof, stream=sys.stdout)
 stats.strip_dirs().sort_stats('cumtime')
 stats.print_stats(20) #XXX: save to file instead of print top 20?

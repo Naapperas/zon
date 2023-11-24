@@ -1,6 +1,6 @@
-import pod
-
 import pytest
+
+import pod
 
 
 @pytest.fixture
