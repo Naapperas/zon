@@ -5,7 +5,7 @@ from typing import final, Callable, TypeVar
 from .error import ValidationError
 
 T = TypeVar("T")
-ValidationRule = tuple[Callable[[T], bool], Callable[[T, str], str]]
+ValidationRule = Callable[[T], bool]
 
 
 class Pod(ABC):
@@ -52,14 +52,11 @@ class Pod(ABC):
                 f"Pod of type {type(self)} must have a valid '_default_' rule"
             )
 
-        passes = True
-
-        for name, (validator, error_generator) in self.validators.items():
+        for _, validator in self.validators.items():
             if not validator(data):
-                passes = False
-                self._add_error(ValidationError(error_generator(data, name)))
+                return False
 
-        return passes
+        return True
 
     @final
     def validate(self, data: T) -> bool:
