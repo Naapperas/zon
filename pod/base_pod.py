@@ -53,15 +53,15 @@ class Pod(ABC):
         """
 
         if "_default_" not in self.validators or not self.validators["_default_"]:
-            raise ValidationError(
-                f"Pod of type {type(self)} must have a valid '_default_' rule"
+            self._add_error(
+                ValidationError(
+                    f"Pod of type {type(self)} must have a valid '_default_' rule"
+                )
             )
+            return False
 
-        for _, validator in self.validators.items():
-            if not validator(data):
-                return False
-
-        return True
+        # TODO: better error messages
+        return all(validator(data) for (_, validator) in self.validators.items())
 
     @final
     def validate(self, data: T) -> bool:

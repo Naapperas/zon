@@ -1,4 +1,3 @@
-# pylint: disable=line-too-long
 """Validator package.
 
 The purpose of this package is to provide a set of functions to validate data, using a Zod-like syntax.

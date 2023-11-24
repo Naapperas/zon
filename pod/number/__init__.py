@@ -1,5 +1,7 @@
 """Class and methods related to the PodNumber validator"""
 
+from __future__ import annotations
+
 from pod.base_pod import Pod
 from pod.error import ValidationError
 
@@ -7,7 +9,7 @@ from pod.error import ValidationError
 class PodNumber(Pod):
     """A Pod that validates that the data is a number, i.e., an int or a float."""
 
-    def __gt__(self, other: int | float) -> "PodNumber":
+    def __gt__(self, other: (int | float)) -> "PodNumber":
         return self.gt(other)
 
     def gt(self, value: int | float) -> "PodNumber":
@@ -24,7 +26,6 @@ class PodNumber(Pod):
 
         def gt_validate(data):
             if data <= value:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(f"Expected number > {value}, got {data}")
                 )
@@ -51,7 +52,6 @@ class PodNumber(Pod):
 
         def gte_validate(data):
             if data < value:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(f"Expected number >= {value}, got {data}")
                 )
@@ -78,7 +78,6 @@ class PodNumber(Pod):
 
         def lt_validate(data):
             if data >= value:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(f"Expected number < {value}, got {data}")
                 )
@@ -105,7 +104,6 @@ class PodNumber(Pod):
 
         def lte_validate(data):
             if data > value:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(f"Expected number <= {value}, got {data}")
                 )
@@ -132,7 +130,6 @@ class PodNumber(Pod):
 
         def eq_validate(data):
             if data != value:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(f"Expected number == {value}, got {data}")
                 )
@@ -172,7 +169,6 @@ class PodNumber(Pod):
             max_cond = data > max_value if max_exclusive else data >= max_value
 
             if min_cond or max_cond:
-                # pylint: disable=protected-access
                 other._add_error(
                     ValidationError(
                         f"Expected {min_value} <= number <= {max_value}, got {data}"
