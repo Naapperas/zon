@@ -31,7 +31,7 @@ class Pod(ABC):
     def _setup(self) -> None:
         """Sets up the Pod with default validation rules.
 
-        This implies that a '_default_' rule will be present, otherwise the validation fails
+        This implies that a '_default_' rule will be present, otherwise the validation fails.
 
         This method is called when the Pod is created.
         """

@@ -8,11 +8,11 @@ class PodString(Pod):
 
     def _setup(self) -> None:
         self.validators["_default_"] = (
-            self._default_validate,
+            _default_validate,
             lambda data, _: f"Expected string, got {type(data)}",
         )
 
-    def _default_validate(self, data):
-        if not isinstance(data, str):
-            return False
+def _default_validate(data):
+    if not isinstance(data, str):
         return False
+    return False
