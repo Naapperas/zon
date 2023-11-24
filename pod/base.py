@@ -1,8 +1,11 @@
 """File containing base Pod class and helper utilities."""
 from abc import ABC, abstractmethod
-from typing import Any, final
+from typing import final, Callable, TypeVar
 
 from .error import ValidationError
+
+T = TypeVar("T")
+ValidationRule = tuple[Callable[[T], bool], Callable[[T, str], str]]
 
 
 class Pod(ABC):
@@ -14,12 +17,25 @@ class Pod(ABC):
 
     def __init__(self):
         self.errors: list[ValidationError] = []
+        """List of validation errors accumulated"""
+
+        self.validators: dict[str, ValidationRule] = {}
+        """validators that will run when 'validate' is invoked."""
 
     def _add_error(self, error: ValidationError):
         self.errors.append(error)
 
     @abstractmethod
-    def _validate(self, data: Any) -> bool:
+    def _setup(self) -> None:
+        """Sets up the Pod with default validation rules.
+
+        This implies that a '_default_' rule will be present, otherwise the validation fails
+
+        This method is called when the Pod is created.
+        """
+
+    @final
+    def _validate(self, data: T) -> bool:
         """Validates the supplied data.
 
         Args:
@@ -28,9 +44,23 @@ class Pod(ABC):
         Returns:
             bool: True if the data is valid, False otherwise.
         """
-    
+
+        if "_default_" not in self.validators or not self.validators["_default_"]:
+            raise ValidationError(
+                f"Pod of type {type(self)} must have a valid '_default_' rule"
+            )
+
+        passes = True
+
+        for name, (validator, error_generator) in self.validators.items():
+            if not validator(data):
+                passes = False
+                self._add_error(ValidationError(error_generator(data, name)))
+
+        return passes
+
     @final
-    def validate(self, data):
+    def validate(self, data: T) -> bool:
         """Validates the supplied data.
 
         Args:
@@ -41,7 +71,9 @@ class Pod(ABC):
             is not implemented on base Pod class.
         """
         if isinstance(self, Pod):
-            raise NotImplementedError("validate() method not implemented on base Pod class")
+            raise NotImplementedError(
+                "validate() method not implemented on base Pod class"
+            )
 
         return self._validate(data)
 
@@ -78,7 +110,10 @@ class PodOptional(Pod):
         super().__init__()
         self.pod = pod
 
-    def _validate(self, data):
+    def _setup(self):
+        self.validators["_default_"] = (self._default_validate, lambda _: "")
+
+    def _default_validate(self, data):
         if data is None:
             return True
         return self.pod.validate(data)
@@ -92,7 +127,10 @@ class PodAnd(Pod):
         self.pod1 = pod1
         self.pod2 = pod2
 
-    def _validate(self, data):
+    def _setup(self):
+        self.validators["_default_"] = (self._default_validate, lambda _: "")
+
+    def _default_validate(self, data):
         if not (self.pod1.validate(data) and self.pod2.validate(data)):
             for error in self.pod1.errors:
                 self._add_error(error)
