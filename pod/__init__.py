@@ -10,6 +10,7 @@ __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
 __copyright__ = "Copyright 2023, Nuno Pereira"
 
+from .base import Pod
 from .bool_pod import PodBoolean
 from .float_pod import PodFloat
 from .int_pod import PodInteger
