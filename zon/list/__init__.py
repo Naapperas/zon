@@ -1,13 +1,13 @@
-"""Class and methods related to the PodList validator."""
+"""Class and methods related to the ZonList validator."""
 
-from .base_pod import Pod
-from .error import ValidationError
+from zon.base import Zon
+from zon.error import ValidationError
 
 
-class PodList(Pod):
-    """A Pod that validates that the data is a list of elements of the specified type."""
+class ZonList(Zon):
+    """A Zon that validates that the data is a list of elements of the specified type."""
 
-    def __init__(self, element_type: Pod):
+    def __init__(self, element_type: Zon):
         super().__init__()
         self.element_type = element_type
 
@@ -36,11 +36,11 @@ class PodList(Pod):
 
     def len(
         self, min_length, max_length, *, min_exclusive=True, max_exclusive=True
-    ) -> "PodList":
+    ) -> "ZonList":
         """Assert that the value under validation has a given length.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()

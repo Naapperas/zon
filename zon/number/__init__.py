@@ -1,25 +1,25 @@
-"""Class and methods related to the PodNumber validator"""
+"""Class and methods related to the ZonNumber validator"""
 
 from __future__ import annotations
 
-from pod.base_pod import Pod
-from pod.error import ValidationError
+from zon.base import Zon
+from zon.error import ValidationError
 
 
-class PodNumber(Pod):
-    """A Pod that validates that the data is a number, i.e., an int or a float."""
+class ZonNumber(Zon):
+    """A Zon that validates that the data is a number, i.e., an int or a float."""
 
-    def __gt__(self, other: (int | float)) -> "PodNumber":
+    def __gt__(self, other: (int | float)) -> "ZonNumber":
         return self.gt(other)
 
-    def gt(self, value: int | float) -> "PodNumber":
+    def gt(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is greater than a given value.
 
         Args:
             value (int | float): the minimum value
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -35,17 +35,17 @@ class PodNumber(Pod):
         other.validators["gt"] = gt_validate
         return other
 
-    def __ge__(self, other: int | float) -> "PodNumber":
+    def __ge__(self, other: int | float) -> "ZonNumber":
         return self.gte(other)
 
-    def gte(self, value: int | float) -> "PodNumber":
+    def gte(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is greater than or equal to a minimum value.
 
         Args:
             value (int | float): the minimum value
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -61,17 +61,17 @@ class PodNumber(Pod):
         other.validators["gte"] = gte_validate
         return other
 
-    def __lt__(self, other: int | float) -> "PodNumber":
+    def __lt__(self, other: int | float) -> "ZonNumber":
         return self.lt(other)
 
-    def lt(self, value: int | float) -> "PodNumber":
+    def lt(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is less than a given value.
 
         Args:
             value (int | float): the maximum value
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -87,17 +87,17 @@ class PodNumber(Pod):
         other.validators["lt"] = lt_validate
         return other
 
-    def __le__(self, other: int | float) -> "PodNumber":
+    def __le__(self, other: int | float) -> "ZonNumber":
         return self.lte(other)
 
-    def lte(self, value: int | float) -> "PodNumber":
+    def lte(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is less than or equal to a maximum value.
 
         Args:
             value (int | float): the maximum value
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -113,17 +113,17 @@ class PodNumber(Pod):
         other.validators["lte"] = lte_validate
         return other
 
-    def __eq__(self, other: int | float) -> "PodNumber":
+    def __eq__(self, other: int | float) -> "ZonNumber":
         return self.eq(other)
 
-    def eq(self, value: int | float) -> "PodNumber":
+    def eq(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is equal to a given value.
 
         Args:
             value (int | float): the value to compare to
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -146,7 +146,7 @@ class PodNumber(Pod):
         *,
         min_exclusive=True,
         max_exclusive=True,
-    ) -> "PodNumber":
+    ) -> "ZonNumber":
         """Assert that the value under validation is between two values.
         The comparison is exclusive on both ends by default.
 
@@ -159,7 +159,7 @@ class PodNumber(Pod):
             Defaults to True.
 
         Returns:
-            PodNumber: a new pod with the validation rule added
+            ZonNumber: a new zon with the validation rule added
         """
 
         other = self._clone()

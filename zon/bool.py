@@ -1,11 +1,11 @@
-"""Class and methods related to the PodBool validator."""
+"""Class and methods related to the ZonBoolean validator."""
 
-from .base_pod import Pod
+from .base import Zon
 from .error import ValidationError
 
 
-class PodBoolean(Pod):
-    """A Pod that validates that the data is a boolean."""
+class ZonBoolean(Zon):
+    """A Zon that validates that the data is a boolean."""
 
     def _setup(self) -> None:
         self.validators["_default_"] = self._default_validate
@@ -20,7 +20,7 @@ class PodBoolean(Pod):
         """Assert that the value under validation is True.
 
         Returns:
-            PodBoolean: a new pod with the validation rule added
+            ZonBoolean: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -33,12 +33,12 @@ class PodBoolean(Pod):
 
         other.validators["true"] = true_validate
         return other
-    
+
     def false(self):
         """Assert that the value under validation is False.
 
         Returns:
-            PodBoolean: a new pod with the validation rule added
+            ZonBoolean: a new zon with the validation rule added
         """
 
         other = self._clone()

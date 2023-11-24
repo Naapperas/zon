@@ -1,10 +1,10 @@
-# pod - Zod-like validator library for Python
+# zon - Zod-like validator library for Python
 
 Want to have the validation power of [zod](https://zod.dev/) but with the ease-of-use of Python?
 
-Enter `pod`.
+Enter `zon`.
 
-`pod` is a Python library that aims to provide a simple, easy-to-use API for validating data, similiar to `zod`'s own API'. In fact, the whole library and its name were inspired by `zod`: Python + Zod = Pod !!!.
+`zon` is a Python library that aims to provide a simple, easy-to-use API for validating data, similiar to `zod`'s own API'. In fact, the whole library and its name were inspired by `zod`: **Z**od + Pyth**on** = **Zon** !!!.
 
 ## Why
 

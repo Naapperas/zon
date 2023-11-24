@@ -1,4 +1,4 @@
-"""Class and methods related to the PodString validator."""
+"""Class and methods related to the ZonString validator."""
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ import uuid
 import email.utils
 import ipaddress
 
-from pod.base_pod import Pod
-from pod.error import ValidationError
+from zon.base import Zon
+from zon.error import ValidationError
 
 
-class PodString(Pod):
-    """A Pod that validates that the data is a string."""
+class ZonString(Zon):
+    """A Zon that validates that the data is a string."""
 
     def _setup(self) -> None:
         self.validators["_default_"] = self._default_validate
@@ -25,11 +25,11 @@ class PodString(Pod):
 
     def len(
         self, min_length, max_length, *, min_exclusive=True, max_exclusive=True
-    ) -> "PodString":
+    ) -> "ZonString":
         """Assert that the value under validation has a given length.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -57,11 +57,11 @@ class PodString(Pod):
         other.validators["len"] = len_validate
         return other
 
-    def regex(self, regex: str | re.Pattern[str]) -> "PodString":
+    def regex(self, regex: str | re.Pattern[str]) -> "ZonString":
         """Assert that the value under validation matches a given regular expression.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -79,11 +79,11 @@ class PodString(Pod):
         other.validators["regex"] = regex_validate
         return other
 
-    def uuid(self) -> "PodString":
+    def uuid(self) -> "ZonString":
         """Assert that the value under validation is a valid UUID.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -103,7 +103,7 @@ class PodString(Pod):
         """Assert that the value under validation is a valid email address.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()
@@ -122,7 +122,7 @@ class PodString(Pod):
         """Assert that the value under validation is a valid IPv4 address.
 
         Returns:
-            PodString: a new pod with the validation rule added
+            ZonString: a new zon with the validation rule added
         """
 
         other = self._clone()

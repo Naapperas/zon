@@ -22,7 +22,7 @@ jobs:
       run: pip install pylint
 
     - name: Run Pylint
-      run: pylint pod
+      run: pylint zon
 
   test:
     runs-on: ubuntu-latest
@@ -44,7 +44,7 @@ jobs:
     - name: Install pytest
       run: pip install pytest
       
-    - name: Install pod
+    - name: Install zon
       run: python setup.py install
 
     - name: Run tests

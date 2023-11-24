@@ -1,4 +1,4 @@
-"""File containing base Pod class and helper utilities."""
+"""File containing base Zon class and helper utilities."""
 from abc import ABC, abstractmethod
 from typing import final, Callable, TypeVar, Self
 import copy
@@ -9,10 +9,10 @@ T = TypeVar("T")
 ValidationRule = Callable[[T], bool]
 
 
-class Pod(ABC):
-    """Base class for all Pods.
-    A Pod is the basic unit of validation in Pod.
-    It is used to validate data, and can be composed with other Pods
+class Zon(ABC):
+    """Base class for all Zons.
+    A Zon is the basic unit of validation in Zon.
+    It is used to validate data, and can be composed with other Zons
     to create more complex validations.
     """
 
@@ -26,7 +26,7 @@ class Pod(ABC):
         self._setup()
 
     def _clone(self) -> Self:
-        """Creates a copy of this Pod."""
+        """Creates a copy of this Zon."""
         return copy.deepcopy(self)
 
     def _add_error(self, error: ValidationError):
@@ -34,11 +34,11 @@ class Pod(ABC):
 
     @abstractmethod
     def _setup(self) -> None:
-        """Sets up the Pod with default validation rules.
+        """Sets up the Zon with default validation rules.
 
         This implies that a '_default_' rule will be present, otherwise the validation fails.
 
-        This method is called when the Pod is created.
+        This method is called when the Zon is created.
         """
 
     @final
@@ -55,7 +55,7 @@ class Pod(ABC):
         if "_default_" not in self.validators or not self.validators["_default_"]:
             self._add_error(
                 ValidationError(
-                    f"Pod of type {type(self)} must have a valid '_default_' rule"
+                    f"Zon of type {type(self)} must have a valid '_default_' rule"
                 )
             )
             return False
@@ -72,50 +72,50 @@ class Pod(ABC):
 
         Raises:
             NotImplementedError: the default implementation of this method
-            is not implemented on base Pod class.
+            is not implemented on base Zon class.
         """
-        if type(self) is Pod:  # pylint: disable=unidiomatic-typecheck
+        if type(self) is Zon:  # pylint: disable=unidiomatic-typecheck
             raise NotImplementedError(
-                "validate() method not implemented on base Pod class"
+                "validate() method not implemented on base Zon class"
             )
 
         return self._validate(data)
 
-    def and_also(self, pod: "Pod") -> "PodAnd":
-        """Creates a new Pod that validates that
-        the data is valid for both this Pod and the supplied Pod.
+    def and_also(self, zon: "Zon") -> "ZonAnd":
+        """Creates a new Zon that validates that
+        the data is valid for both this Zon and the supplied Zon.
 
         Args:
-            pod (Pod): the Pod to be validated.
+            zon (Zon): the Zon to be validated.
 
         Returns:
-            PodAnd: a new validator that validates that
-            the data is valid for both this Pod and the supplied Pod.
+            ZonAnd: a new validator that validates that
+            the data is valid for both this Zon and the supplied Zon.
         """
-        return PodAnd(self, pod)
-    
-    def __and__(self, pod: "Pod") -> "PodAnd":
-        return self.and_also(pod)
+        return ZonAnd(self, zon)
+
+    def __and__(self, zon: "Zon") -> "ZonAnd":
+        return self.and_also(zon)
 
 
-def optional(pod: Pod) -> "PodOptional":
+def optional(zon: Zon) -> "ZonOptional":
     """Marks this validation chain as optional, making it so the data supplied need not be defined.
 
     Args:
-        pod (Pod): the validator to be marked as optional.
+        zon (Zon): the validator to be marked as optional.
 
     Returns:
-        PodOptional: a new validator that makes any validation optional.
+        ZonOptional: a new validator that makes any validation optional.
     """
-    return PodOptional(pod)
+    return ZonOptional(zon)
 
 
-class PodOptional(Pod):
-    """A Pod that makes its data validation optional."""
+class ZonOptional(Zon):
+    """A Zon that makes its data validation optional."""
 
-    def __init__(self, pod):
+    def __init__(self, zon):
         super().__init__()
-        self.pod = pod
+        self.zon = zon
 
     def _setup(self):
         self.validators["_default_"] = self._default_validate
@@ -123,26 +123,26 @@ class PodOptional(Pod):
     def _default_validate(self, data):
         if data is None:
             return True
-        return self.pod.validate(data)
+        return self.zon.validate(data)
 
 
-class PodAnd(Pod):
-    """A Pod that validates that the data is valid for both this Pod and the supplied Pod."""
+class ZonAnd(Zon):
+    """A Zon that validates that the data is valid for both this Zon and the supplied Zon."""
 
-    def __init__(self, pod1, pod2):
+    def __init__(self, zon1, zon2):
         super().__init__()
-        self.pod1 = pod1
-        self.pod2 = pod2
+        self.zon1 = zon1
+        self.zon2 = zon2
 
     def _setup(self):
         self.validators["_default_"] = self._default_validate
 
     def _default_validate(self, data):
-        if not (self.pod1.validate(data) and self.pod2.validate(data)):
-            for error in self.pod1.errors:
+        if not (self.zon1.validate(data) and self.zon2.validate(data)):
+            for error in self.zon1.errors:
                 self._add_error(error)
 
-            for error in self.pod2.errors:
+            for error in self.zon2.errors:
                 self._add_error(error)
 
             return False

@@ -1,12 +1,12 @@
-"""Class and methods related to PodInt validator."""
+"""Class and methods related to ZonInteger validator."""
 
-from pod.error import ValidationError
+from zon.error import ValidationError
 
-import pod.number as pod_number
+import zon.number as zon_number
 
 
-class PodInteger(pod_number.PodNumber):
-    """A Pod that validates that the data is an integer."""
+class ZonInteger(zon_number.ZonNumber):
+    """A Zon that validates that the data is an integer."""
 
     def _setup(self) -> None:
         self.validators["_default_"] = self._default_validate

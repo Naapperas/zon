@@ -1,11 +1,11 @@
 import pytest
 
-import pod
+import zon
 
 
 @pytest.fixture
 def validator():
-    return pod.string()
+    return zon.string()
 
 
 def test_str(validator):

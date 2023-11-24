@@ -1,11 +1,11 @@
 import pytest
 
-import pod
+import zon
 
 
 @pytest.fixture
 def validator():
-    return pod.integer()
+    return zon.integer()
 
 
 def test_int(validator):

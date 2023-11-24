@@ -1,15 +1,15 @@
-"""Class and methods related to the PodRecord validator."""
+"""Class and methods related to the ZonRecord validator."""
 
-from .base_pod import Pod
+from .base import Zon
 from .error import ValidationError
 
 # TODO: better error messages
 
 
-class PodRecord(Pod):
-    """A Pod that validates that the data is an object with the specified properties."""
+class ZonRecord(Zon):
+    """A Zon that validates that the data is an object with the specified properties."""
 
-    def __init__(self, properties: dict[str, Pod]):
+    def __init__(self, properties: dict[str, Zon]):
         super().__init__()
         self.properties = properties
 
@@ -22,8 +22,8 @@ class PodRecord(Pod):
             return False
 
         error = False
-        for key, pod in self.properties.items():
-            if not pod.validate(data.get(key)):
+        for key, zon in self.properties.items():
+            if not zon.validate(data.get(key)):
                 self._add_error(
                     ValidationError(
                         f"Property {key} failed validation: {data.get(key)}"
@@ -32,8 +32,8 @@ class PodRecord(Pod):
                 error = True
 
         if error:
-            for pod in self.properties.values():
-                for error in pod.errors:
+            for zon in self.properties.values():
+                for error in zon.errors:
                     self._add_error(
                         ValidationError(f"Error validating properties: {error}")
                     )

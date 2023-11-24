@@ -1,4 +1,4 @@
-"""Validation errors for Pods"""
+"""Validation errors for Zons"""
 
 
 class ValidationError(Exception):
