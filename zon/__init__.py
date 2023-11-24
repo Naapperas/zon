@@ -14,7 +14,7 @@ from zon.number.float import ZonFloat
 from zon.number.int import ZonInteger
 from zon.base import Zon
 from zon.bool import ZonBoolean
-from zon.list import ZonList
+from zon.element_list import ZonList
 from zon.str import ZonString
 from zon.union import ZonUnion
 from zon.record import ZonRecord
