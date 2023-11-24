@@ -10,7 +10,7 @@ class PodUnion(Pod):
         super().__init__()
         self.types = types
 
-    def validate(self, data):
+    def _validate(self, data):
         if any(pod.validate(data) for pod in self.types):
             return True
 

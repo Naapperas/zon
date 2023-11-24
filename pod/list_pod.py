@@ -11,7 +11,7 @@ class PodList(Pod):
         super().__init__()
         self.element_type = element_type
 
-    def validate(self, data):
+    def _validate(self, data):
         if not isinstance(data, list):
             self._add_error(ValidationError(f"Expected list, got {type(data)}"))
             return False

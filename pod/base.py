@@ -1,5 +1,6 @@
 """File containing base Pod class and helper utilities."""
 from abc import ABC, abstractmethod
+from typing import Any, final
 
 from .error import ValidationError
 
@@ -18,6 +19,17 @@ class Pod(ABC):
         self.errors.append(error)
 
     @abstractmethod
+    def _validate(self, data: Any) -> bool:
+        """Validates the supplied data.
+
+        Args:
+            data (Any): the piece of data to be validated.
+
+        Returns:
+            bool: True if the data is valid, False otherwise.
+        """
+    
+    @final
     def validate(self, data):
         """Validates the supplied data.
 
@@ -28,7 +40,10 @@ class Pod(ABC):
             NotImplementedError: the default implementation of this method
             is not implemented on base Pod class.
         """
-        raise NotImplementedError("validate() method not implemented on base Pod class")
+        if isinstance(self, Pod):
+            raise NotImplementedError("validate() method not implemented on base Pod class")
+
+        return self._validate(data)
 
     def and_also(self, pod: "Pod") -> "PodAnd":
         """Creates a new Pod that validates that
@@ -63,7 +78,7 @@ class PodOptional(Pod):
         super().__init__()
         self.pod = pod
 
-    def validate(self, data):
+    def _validate(self, data):
         if data is None:
             return True
         return self.pod.validate(data)
@@ -77,7 +92,7 @@ class PodAnd(Pod):
         self.pod1 = pod1
         self.pod2 = pod2
 
-    def validate(self, data):
+    def _validate(self, data):
         if not (self.pod1.validate(data) and self.pod2.validate(data)):
             for error in self.pod1.errors:
                 self._add_error(error)

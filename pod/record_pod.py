@@ -13,7 +13,7 @@ class PodRecord(Pod):
         super().__init__()
         self.properties = properties
 
-    def validate(self, data):
+    def _validate(self, data):
         if not isinstance(data, dict):
             self._add_error(ValidationError(f"Expected object, got {type(data)}"))
             return False
