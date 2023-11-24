@@ -9,6 +9,8 @@ class PodUnion(Pod):
     def __init__(self, types: list[Pod]):
         super().__init__()
         self.types = types
+
+    def _setup(self):
         self.validators["_default_"] = self._default_validate
 
     def _default_validate(self, data):

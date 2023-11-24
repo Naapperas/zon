@@ -1,10 +1,11 @@
 """Class and methods related to PodInt validator."""
 
-from .base_pod import Pod
-from .error import ValidationError
+from pod.error import ValidationError
+
+import pod.number as pod_number
 
 
-class PodInteger(Pod):
+class PodInteger(pod_number.PodNumber):
     """A Pod that validates that the data is an integer."""
 
     def _setup(self) -> None:

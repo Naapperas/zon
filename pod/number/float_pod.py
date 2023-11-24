@@ -1,10 +1,11 @@
 """Class and methods related to the PodFloat validator."""
 
-from .base_pod import Pod
-from .error import ValidationError
+from pod.error import ValidationError
+
+from . import PodNumber
 
 
-class PodFloat(Pod):
+class PodFloat(PodNumber):
     """A Pod that validates that the data is a floating point number."""
 
     def _setup(self) -> None:

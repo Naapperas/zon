@@ -10,6 +10,8 @@ class PodList(Pod):
     def __init__(self, element_type: Pod):
         super().__init__()
         self.element_type = element_type
+
+    def _setup(self):
         self.validators["_default_"] = self._default_validate
 
     def _default_validate(self, data):

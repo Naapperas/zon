@@ -1,6 +1,7 @@
 """File containing base Pod class and helper utilities."""
 from abc import ABC, abstractmethod
-from typing import final, Callable, TypeVar
+from typing import final, Callable, TypeVar, Self
+import copy
 
 from .error import ValidationError
 
@@ -23,6 +24,10 @@ class Pod(ABC):
         """validators that will run when 'validate' is invoked."""
 
         self._setup()
+
+    def _clone(self) -> Self:
+        """Creates a copy of this Pod."""
+        return copy.deepcopy(self)
 
     def _add_error(self, error: ValidationError):
         self.errors.append(error)

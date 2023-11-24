@@ -11,15 +11,16 @@ __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
 __copyright__ = "Copyright 2023, Nuno Pereira"
 
-from .base_pod import Pod
-from .bool_pod import PodBoolean
-from .float_pod import PodFloat
-from .int_pod import PodInteger
-from .list_pod import PodList
-from .number_pod import PodNumber
-from .str_pod import PodString
-from .union_pod import PodUnion
-from .record_pod import PodRecord
+from pod.number import PodNumber
+from pod.number.float_pod import PodFloat
+from pod.number.int_pod import PodInteger
+
+from pod.base_pod import Pod
+from pod.bool_pod import PodBoolean
+from pod.list_pod import PodList
+from pod.str_pod import PodString
+from pod.union_pod import PodUnion
+from pod.record_pod import PodRecord
 
 
 def string() -> "PodString":
@@ -29,15 +30,6 @@ def string() -> "PodString":
         PodString: a new validator that validates that the data is a string.
     """
     return PodString()
-
-
-def number() -> "PodNumber":
-    """Creates a new Pod that validates that the data is a number, i.e., an int or a float.
-
-    Returns:
-        PodNumber: a new validator that validates that the data is a number.
-    """
-    return PodNumber()
 
 
 def integer() -> "PodInteger":
