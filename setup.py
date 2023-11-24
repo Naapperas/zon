@@ -3,9 +3,12 @@ import setuptools
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
+with open("version", "r", encoding="utf-8") as fh:
+    version = fh.read()
+
 setuptools.setup(
     name="Naapperas",  # Replace with your username
-    version="0.0.1",
+    version=version,
     author="Naapperas",
     author_email="nunoafonso2002@gmail.com",
     description="A Zod-like validation library for Python",

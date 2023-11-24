@@ -1,6 +1,6 @@
 """Class and methods related to PodInt validator."""
 
-from .base import Pod
+from .base_pod import Pod
 from .error import ValidationError
 
 

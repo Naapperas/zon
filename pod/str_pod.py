@@ -1,6 +1,6 @@
 """Class and methods related to the PodString validator."""
 
-from .base import Pod
+from .base_pod import Pod
 
 
 class PodString(Pod):
@@ -12,7 +12,8 @@ class PodString(Pod):
             lambda data, _: f"Expected string, got {type(data)}",
         )
 
+
 def _default_validate(data):
     if not isinstance(data, str):
         return False
-    return False
+    return True

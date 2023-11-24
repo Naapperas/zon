@@ -4,13 +4,14 @@
 The purpose of this package is to provide a set of functions to validate data, using a Zod-like syntax.
 """
 
-__version__ = "0.0.1"
+with open("version", "r", encoding="utf-8") as fh:
+    __version__ = fh.read()
 __author__ = "Nuno Pereira"
 __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
 __copyright__ = "Copyright 2023, Nuno Pereira"
 
-from .base import Pod
+from .base_pod import Pod
 from .bool_pod import PodBoolean
 from .float_pod import PodFloat
 from .int_pod import PodInteger
