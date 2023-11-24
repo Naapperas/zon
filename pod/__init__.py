@@ -11,14 +11,12 @@ __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
 __copyright__ = "Copyright 2023, Nuno Pereira"
 
-from pod.number import PodNumber
-from pod.number.float_pod import PodFloat
-from pod.number.int_pod import PodInteger
-
+from pod.number.float import PodFloat
+from pod.number.int import PodInteger
 from pod.base_pod import Pod
 from pod.bool_pod import PodBoolean
 from pod.list_pod import PodList
-from pod.str_pod import PodString
+from pod.str import PodString
 from pod.union_pod import PodUnion
 from pod.record_pod import PodRecord
 

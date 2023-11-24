@@ -1,7 +1,7 @@
 """Class and methods related to the PodString validator."""
 
-from .base_pod import Pod
-from .error import ValidationError
+from pod.base_pod import Pod
+from pod.error import ValidationError
 
 
 class PodString(Pod):
