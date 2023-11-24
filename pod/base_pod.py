@@ -93,6 +93,9 @@ class Pod(ABC):
             the data is valid for both this Pod and the supplied Pod.
         """
         return PodAnd(self, pod)
+    
+    def __and__(self, pod: "Pod") -> "PodAnd":
+        return self.and_also(pod)
 
 
 def optional(pod: Pod) -> "PodOptional":

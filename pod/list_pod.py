@@ -33,3 +33,37 @@ class PodList(Pod):
                 self._add_error(ValidationError(f"Error validating elements: {error}"))
 
         return not error
+
+    def len(
+        self, min_length, max_length, *, min_exclusive=True, max_exclusive=True
+    ) -> "PodList":
+        """Assert that the value under validation has a given length.
+
+        Returns:
+            PodString: a new pod with the validation rule added
+        """
+
+        other = self._clone()
+
+        def len_validate(data):
+            max_cond = (
+                len(data) > max_length if max_exclusive else len(data) >= max_length
+            )
+            min_cond = (
+                len(data) < min_length if min_exclusive else len(data) <= min_length
+            )
+
+            if max_cond or min_cond:
+                other._add_error(
+                    ValidationError(
+                        f"Expected list length between \
+                        {'(' if min_exclusive else '['}{min_length},\
+                        {max_length}{')' if max_exclusive else ']'}\
+                        , got {len(data)}"
+                    )
+                )
+                return False
+            return True
+
+        other.validators["len"] = len_validate
+        return other
