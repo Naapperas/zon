@@ -3,7 +3,7 @@
 from .base import Zon
 
 
-class ZonNone(Zon):
+class ZonAny(Zon):
     """A Zon that validates that the data is any data type."""
 
     def _setup(self) -> None:

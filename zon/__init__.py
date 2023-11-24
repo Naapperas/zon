@@ -18,6 +18,8 @@ from zon.element_list import ZonList
 from zon.str import ZonString
 from zon.union import ZonUnion
 from zon.record import ZonRecord
+from zon.any import ZonAny
+from zon.none import ZonNone
 
 
 def string() -> "ZonString":
@@ -92,3 +94,19 @@ def record(properties: dict[str, "Zon"]) -> "ZonRecord":
         an object with the specified properties.
     """
     return ZonRecord(properties)
+
+def none() -> "ZonNone":
+    """Creates a new Zon that validates that the data is None.
+
+    Returns:
+        ZonNone: a new validator that validates that the data is None.
+    """
+    return ZonNone()
+
+def anything() -> "ZonAny":
+    """Creates a new Zon that validates anything.
+
+    Returns:
+        ZonAny: a new validator that validates anything.
+    """
+    return ZonAny()
