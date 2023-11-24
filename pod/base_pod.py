@@ -110,7 +110,7 @@ class PodOptional(Pod):
         self.pod = pod
 
     def _setup(self):
-        self.validators["_default_"] = (self._default_validate, lambda _: "")
+        self.validators["_default_"] = self._default_validate
 
     def _default_validate(self, data):
         if data is None:
@@ -127,7 +127,7 @@ class PodAnd(Pod):
         self.pod2 = pod2
 
     def _setup(self):
-        self.validators["_default_"] = (self._default_validate, lambda _: "")
+        self.validators["_default_"] = self._default_validate
 
     def _default_validate(self, data):
         if not (self.pod1.validate(data) and self.pod2.validate(data)):
