@@ -51,6 +51,19 @@ class Pod(ABC):
         """
         raise NotImplementedError("validate() method not implemented on base Pod class")
 
+    def and_also(self, pod: "Pod") -> "PodAnd":
+        """Creates a new Pod that validates that
+        the data is valid for both this Pod and the supplied Pod.
+
+        Args:
+            pod (Pod): the Pod to be validated.
+
+        Returns:
+            PodAnd: a new validator that validates that
+            the data is valid for both this Pod and the supplied Pod.
+        """
+        return PodAnd(self, pod)
+
 
 def optional(pod: Pod) -> "PodOptional":
     """Marks this validation chain as optional, making it so the data supplied need not be defined.
@@ -158,6 +171,27 @@ class PodOptional(Pod):
         if data is None:
             return True
         return self.pod.validate(data)
+
+
+class PodAnd(Pod):
+    """A Pod that validates that the data is valid for both this Pod and the supplied Pod."""
+
+    def __init__(self, pod1, pod2):
+        super().__init__()
+        self.pod1 = pod1
+        self.pod2 = pod2
+
+    def validate(self, data):
+        if not (self.pod1.validate(data) and self.pod2.validate(data)):
+            for error in self.pod1.errors:
+                self._add_error(error)
+
+            for error in self.pod2.errors:
+                self._add_error(error)
+
+            return False
+
+        return True
 
 
 class PodNumber(Pod):
