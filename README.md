@@ -146,7 +146,9 @@ pytest /test
 
 ## Contributing
 
-No contribution guidelines are available yet, but they will be soon.
+Contribution guidelines can be found in [CONTRIBUTING](CONTRIBUTING.md)
+
+Past and current contributors can be found in [CONTRIBUTORS](CONTRIBUTORS.md)
 
 ## License
 
