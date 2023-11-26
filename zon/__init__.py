@@ -95,6 +95,7 @@ def record(properties: dict[str, "Zon"]) -> "ZonRecord":
     """
     return ZonRecord(properties)
 
+
 def none() -> "ZonNone":
     """Creates a new Zon that validates that the data is None.
 
@@ -102,6 +103,7 @@ def none() -> "ZonNone":
         ZonNone: a new validator that validates that the data is None.
     """
     return ZonNone()
+
 
 def anything() -> "ZonAny":
     """Creates a new Zon that validates anything.
