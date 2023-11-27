@@ -9,6 +9,10 @@ T = TypeVar("T")
 ValidationRule = Callable[[T], bool]
 
 
+class AggregateValidator:
+    """A validator that aggregates multiple validation calls"""
+
+
 class Zon(ABC):
     """Base class for all Zons.
     A Zon is the basic unit of validation in Zon.
@@ -96,6 +100,38 @@ class Zon(ABC):
 
     def __and__(self, zon: "Zon") -> "ZonAnd":
         return self.and_also(zon)
+
+    def refine(self, refinement: Callable[[T], bool]) -> "Self":
+        """Creates a new Zon that validates the data with the supplied refinement.
+
+        A refinement is a function that takes a piece of data and returns True if the data is valid or throws otherwise.
+
+        Args:
+            refinement (Callable[[T], bool]): the refinement to be applied.
+
+        Returns:
+            ZonRefined: a new validator that validates the data with the supplied refinement.
+        """
+        _clone = self._clone()
+
+        def _refinement_validate(data):
+            try:
+                return refinement(data)
+            except ValidationError as e:
+                _clone._add_error(e)
+                return False
+
+        if "_refined_" not in _clone.validators:
+            _clone.validators["_refined_"] = _refinement_validate
+        else:
+            def _refined_validator(data):
+                return _clone.validators["_refined_"](data) and _refinement_validate(
+                    data
+                )
+
+            _clone.validators["_refined_"] = _refined_validator
+
+        return _clone()
 
 
 def optional(zon: Zon) -> "ZonOptional":
