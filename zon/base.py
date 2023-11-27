@@ -133,7 +133,7 @@ class Zon(ABC):
 
             _clone.validators["_refined_"] = _refined_validator
 
-        return _clone()
+        return _clone
 
 
 def optional(zon: Zon) -> "ZonOptional":
@@ -167,7 +167,7 @@ class ZonOptional(Zon):
 class ZonAnd(Zon):
     """A Zon that validates that the data is valid for both this Zon and the supplied Zon."""
 
-    def __init__(self, zon1, zon2):
+    def __init__(self, zon1: Zon, zon2: Zon):
         super().__init__()
         self.zon1 = zon1
         self.zon2 = zon2
