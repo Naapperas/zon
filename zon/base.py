@@ -124,8 +124,10 @@ class Zon(ABC):
         if "_refined_" not in _clone.validators:
             _clone.validators["_refined_"] = _refinement_validate
         else:
+            current_refinement = _clone.validators["_refined_"]
+
             def _refined_validator(data):
-                return _clone.validators["_refined_"](data) and _refinement_validate(
+                return current_refinement(data) and _refinement_validate(
                     data
                 )
 
