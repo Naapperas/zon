@@ -1,7 +1,7 @@
 """Class and methods related to the ZonNone validator."""
 
 from .base import Zon
-from .error import ValidationError
+from .error import ZonError
 
 
 class ZonNone(Zon):
@@ -12,6 +12,6 @@ class ZonNone(Zon):
 
     def _default_validate(self, data):
         if data is not None:
-            self._add_error(ValidationError(f"Expected None, got {type(data)}"))
+            self._add_error(ZonError(f"Expected None, got {type(data)}"))
             return False
         return True

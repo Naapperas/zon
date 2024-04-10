@@ -1,9 +1,10 @@
 """File containing base Zon class and helper utilities."""
+
 from abc import ABC, abstractmethod
 from typing import final, Callable, TypeVar, Self
 import copy
 
-from .error import ValidationError
+from .error import ZonError
 
 T = TypeVar("T")
 ValidationRule = Callable[[T], bool]
@@ -21,7 +22,7 @@ class Zon(ABC):
     """
 
     def __init__(self):
-        self.errors: list[ValidationError] = []
+        self.errors: list[ZonError] = []
         """List of validation errors accumulated"""
 
         self.validators: dict[str, ValidationRule] = {}
@@ -33,7 +34,7 @@ class Zon(ABC):
         """Creates a copy of this Zon."""
         return copy.deepcopy(self)
 
-    def _add_error(self, error: ValidationError):
+    def _add_error(self, error: ZonError):
         self.errors.append(error)
 
     @abstractmethod
@@ -58,9 +59,7 @@ class Zon(ABC):
 
         if "_default_" not in self.validators or not self.validators["_default_"]:
             self._add_error(
-                ValidationError(
-                    f"Zon of type {type(self)} must have a valid '_default_' rule"
-                )
+                ZonError(f"Zon of type {type(self)} must have a valid '_default_' rule")
             )
             return False
 
@@ -117,7 +116,7 @@ class Zon(ABC):
         def _refinement_validate(data):
             try:
                 return refinement(data)
-            except ValidationError as e:
+            except ZonError as e:
                 _clone._add_error(e)
                 return False
 
@@ -127,9 +126,7 @@ class Zon(ABC):
             current_refinement = _clone.validators["_refined_"]
 
             def _refined_validator(data):
-                return current_refinement(data) and _refinement_validate(
-                    data
-                )
+                return current_refinement(data) and _refinement_validate(data)
 
             _clone.validators["_refined_"] = _refined_validator
 

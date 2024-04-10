@@ -16,6 +16,18 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  "validators>0.28",
+  "typing_extensions>4.12"
+]
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "build",
+  "pylint",
+  "pytest",
+]
 
 [project.urls]
 Homepage = "https://github.com/Naapperas/zon"

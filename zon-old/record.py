@@ -1,7 +1,7 @@
 """Class and methods related to the ZonRecord validator."""
 
 from .base import Zon
-from .error import ValidationError
+from .error import ZonError
 
 # TODO: better error messages
 
@@ -18,24 +18,20 @@ class ZonRecord(Zon):
 
     def _default_validate(self, data):
         if not isinstance(data, dict):
-            self._add_error(ValidationError(f"Expected object, got {type(data)}"))
+            self._add_error(ZonError(f"Expected object, got {type(data)}"))
             return False
 
         error = False
         for key, zon in self.properties.items():
             if not zon.validate(data.get(key)):
                 self._add_error(
-                    ValidationError(
-                        f"Property {key} failed validation: {data.get(key)}"
-                    )
+                    ZonError(f"Property {key} failed validation: {data.get(key)}")
                 )
                 error = True
 
         if error:
             for zon in self.properties.values():
                 for error in zon.errors:
-                    self._add_error(
-                        ValidationError(f"Error validating properties: {error}")
-                    )
+                    self._add_error(ZonError(f"Error validating properties: {error}"))
 
         return not error

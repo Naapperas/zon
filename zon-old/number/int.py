@@ -1,6 +1,6 @@
 """Class and methods related to ZonInteger validator."""
 
-from zon.error import ValidationError
+from zon.error import ZonError
 
 import zon.number as zon_number
 
@@ -13,6 +13,6 @@ class ZonInteger(zon_number.ZonNumber):
 
     def _default_validate(self, data):
         if not isinstance(data, int):
-            self._add_error(ValidationError(f"Expected integer, got {type(data)}"))
+            self._add_error(ZonError(f"Expected integer, got {type(data)}"))
             return False
         return True

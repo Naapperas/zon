@@ -1,6 +1,6 @@
 """Class and methods related to the ZonFloat validator."""
 
-from zon.error import ValidationError
+from zon.error import ZonError
 
 from . import ZonNumber
 
@@ -13,6 +13,6 @@ class ZonFloat(ZonNumber):
 
     def _default_validate(self, data):
         if not isinstance(data, float):
-            self._add_error(ValidationError(f"Expected float, got {type(data)}"))
+            self._add_error(ZonError(f"Expected float, got {type(data)}"))
             return False
         return True

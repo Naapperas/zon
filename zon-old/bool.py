@@ -1,7 +1,7 @@
 """Class and methods related to the ZonBoolean validator."""
 
 from .base import Zon
-from .error import ValidationError
+from .error import ZonError
 
 
 class ZonBoolean(Zon):
@@ -12,7 +12,7 @@ class ZonBoolean(Zon):
 
     def _default_validate(self, data):
         if not isinstance(data, bool):
-            self._add_error(ValidationError(f"Expected boolean, got {type(data)}"))
+            self._add_error(ZonError(f"Expected boolean, got {type(data)}"))
             return False
         return True
 
@@ -27,7 +27,7 @@ class ZonBoolean(Zon):
 
         def true_validate(data):
             if not data:
-                other._add_error(ValidationError(f"Expected True, got {data}"))
+                other._add_error(ZonError(f"Expected True, got {data}"))
                 return False
             return True
 
@@ -45,7 +45,7 @@ class ZonBoolean(Zon):
 
         def false_validate(data):
             if data:
-                other._add_error(ValidationError(f"Expected False, got {data}"))
+                other._add_error(ZonError(f"Expected False, got {data}"))
                 return False
             return True
 
