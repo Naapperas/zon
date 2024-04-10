@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.1.0] - 2024-04-10
+
 ### Added
 - `zon` now has a changelog.
 - Added `zon.traits` module for common functionality that is specific to no validator.
@@ -31,5 +33,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added base source code files for the project.
 - Base `README.md` file.
 
-[unreleased]: https://github.com/Naapperas/zon/compare/v1.0.0...HEAD
+[unreleased]: https://github.com/Naapperas/zon/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Naapperas/zon/compare/v1.1.0...v1.1.0
 [1.0.0]: https://github.com/Naapperas/zon/releases/tag/v1.0.0
