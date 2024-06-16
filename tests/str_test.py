@@ -211,6 +211,7 @@ def test_str_datetime_complex(validator):
     # local (no 'Z'), with hour-only offset, 3 digit precision
     assert _validator.validate("2020-01-01T00:00:00.123+02")
 
+
 # TODO: use classes to group tests
 def test_str_ip_all(validator):
     _validator = validator.ip()
@@ -227,6 +228,7 @@ def test_str_ip_all(validator):
     with pytest.raises(zon.error.ZonError):
         _validator.validate("::1.1.1")
 
+
 def test_str_ip_v4(validator):
     _validator = validator.ip({"version": "v4"})
 
@@ -235,6 +237,7 @@ def test_str_ip_v4(validator):
 
     with pytest.raises(zon.error.ZonError):
         _validator.validate("::ffff:127.0.0.1")
+
 
 def test_str_ip_v6(validator):
     _validator = validator.ip({"version": "v6"})

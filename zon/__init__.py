@@ -565,3 +565,107 @@ class ZonString(ZonContainer):
         )
 
         return _clone
+
+
+def number(*, fast_termination=False) -> ZonString:
+    """Returns a validator for numeric data.
+
+    Args:
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonNumber: The number data validator.
+    """
+    return ZonNumber(terminate_early=fast_termination)
+
+
+class ZonNumber(Zon):
+    """A Zon that validates that the data is a number."""
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        if not isinstance(data, (int, float)):
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid number", path=[]))
+
+    def gt(self, min_ex: float | int) -> Self:
+        """Assert that the value under validation is greater than the given number.
+
+        Args:
+            min_ex (float | int): the number to compare against.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "gt",
+                lambda data: data > min_ex,
+            )
+        )
+
+        return _clone
+
+    def gte(self, min_in: float | int) -> Self:
+        """Assert that the value under validation is greater than or equal to the given number.
+
+        Args:
+            min_in (float | int): the number to compare against.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "gte",
+                lambda data: data >= min_in,
+            )
+        )
+
+        return _clone
+
+    def lt(self, max_ex: float | int) -> Self:
+        """Assert that the value under validation is less than the given number.
+
+        Args:
+            max_ex (float | int): the number to compare against.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "lt",
+                lambda data: data < max_ex,
+            )
+        )
+
+        return _clone
+
+    def lte(self, max_in: float | int) -> Self:
+        """Assert that the value under validation is less than or equal to the given number.
+
+        Args:
+            max_in (float | int): the number to compare against.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "lte",
+                lambda data: data <= max_in,
+            )
+        )
+
+        return _clone
