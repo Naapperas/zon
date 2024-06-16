@@ -62,6 +62,8 @@ T = TypeVar("T")
 
 
 class ValidationRule:
+    """_summary_"""
+
     def __init__(
         self,
         name: str,
@@ -74,16 +76,29 @@ class ValidationRule:
         self.additional_data = additional_data if additional_data is not None else {}
 
     def check(self, data: Any, ctx: ValidationContext) -> bool:
-        valid = self.fn(data)
+        """ """
 
-        if not valid:
+        valid = False
+        try:
+            valid = self.fn(data)
+
+            if not valid:
+                ctx.add_issue(
+                    ZonIssue(
+                        value=data,
+                        message=f"Validation failed for type {self.name}",
+                        path=[],
+                    )
+                )
+        except validators.ValidationError as e:
             ctx.add_issue(
                 ZonIssue(
                     value=data,
-                    message=f"Validation failed for type {self.name}",
+                    message=f"Validation failed for type {self.name}: {e}",
                     path=[],
                 )
             )
+            valid = False
 
         return valid
 
@@ -505,6 +520,47 @@ class ZonString(ZonContainer):
             ValidationRule(
                 "datetime",
                 lambda data: _datetime_regex(opts).match(data) is not None,
+            )
+        )
+
+        return _clone
+
+    def ip(self, opts: Mapping[str, Any] | None = None) -> Self:
+        """Assert that the value under validation is a valid IP address.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        if opts is None:
+            opts = {}
+
+        _clone = self._clone()
+
+        def _validator(data, opts: Mapping[str, Any]):
+
+            doesnt_specify_version = "version" not in opts
+
+            if doesnt_specify_version or opts["version"] == "v4":
+                try:
+                    if validators.ipv4(data):
+                        return True
+                except validators.ValidationError:
+                    pass
+
+            if doesnt_specify_version or opts["version"] == "v6":
+                try:
+                    if validators.ipv6(data):
+                        return True
+                except validators.ValidationError:
+                    pass
+
+            return False
+
+        _clone.validators.append(
+            ValidationRule(
+                "ip",
+                lambda data: _validator(data, opts),
             )
         )
 

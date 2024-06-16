@@ -205,37 +205,43 @@ def test_str_datetime_local(validator):
     assert _validator.validate("2020-01-01T00:00:00")
 
 
-"""
-def test_ipv4(validator):
+def test_str_datetime_complex(validator):
+    _validator = validator.datetime({"local": True, "offset": True, "precision": 3})
+
+    # local (no 'Z'), with hour-only offset, 3 digit precision
+    assert _validator.validate("2020-01-01T00:00:00.123+02")
+
+# TODO: use classes to group tests
+def test_str_ip_all(validator):
     _validator = validator.ip()
+
+    assert _validator.validate("127.0.0.1")
+    assert _validator.validate("0.0.0.0")
+    assert _validator.validate("::")
+    assert _validator.validate("::1")
+    assert _validator.validate("::ffff:127.0.0.1")
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("1.1.1")
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("::1.1.1")
+
+def test_str_ip_v4(validator):
+    _validator = validator.ip({"version": "v4"})
 
     assert _validator.validate("255.255.255.255")
     assert _validator.validate("0.0.0.0")
 
-    assert not _validator.validate("1.1.1")
-    assert not _validator.validate("0.0.0.0.0")
-    assert not _validator.validate("256.256.256.256")
-    assert not _validator.validate("255.255.255.256")
-    assert not _validator.validate("255.255.256.255")
-    assert not _validator.validate("255.256.255.255")
-    assert not _validator.validate("256.255.255.255")
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("::ffff:127.0.0.1")
 
+def test_str_ip_v6(validator):
+    _validator = validator.ip({"version": "v6"})
 
-def test_ipv6(validator):
-    _validator = validator.ip()
-
-    # Ipv6 addresses
     assert _validator.validate("::")
     assert _validator.validate("::1")
     assert _validator.validate("::ffff:127.0.0.1")
-    assert _validator.validate("::ffff:7f00:1")
-    assert _validator.validate("::ffff:127.0.0.1")
 
-    assert not _validator.validate("::1.1.1")
-    assert not _validator.validate("::ffff:127.0.0.1.1.1")
-    assert not _validator.validate("::ffff:127.0.0.256")
-    assert not _validator.validate("::ffff:127.0.0.256.256")
-
-    # Example taken from https://zod.dev/?id=ip-addresses
-    assert not _validator.validate("84d5:51a0:9114:gggg:4cfa:f2d7:1f12:7003")
-"""
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("255.255.255.255")
