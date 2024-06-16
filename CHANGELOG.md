@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Implemented non-default validation
 - Added dimension tests for `ZonString`
 - Added `examples` folder
+- Added `early failure` mechanism to prevent validation on objects after the first validation error
 
 ### Changed
 - Moved everything into a single file to combat circular reference issues

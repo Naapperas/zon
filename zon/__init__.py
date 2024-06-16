@@ -63,7 +63,7 @@ class ValidationRule:
         self.name = name
         self.additional_data = additional_data
 
-    def check(self, data: Any, ctx: ValidationContext):
+    def check(self, data: Any, ctx: ValidationContext) -> bool:
         valid = self.fn(data)
 
         if not valid:
@@ -75,6 +75,7 @@ class ValidationRule:
                 )
             )
 
+        return valid
 
 class Zon(ABC):
     """
@@ -132,6 +133,7 @@ class Zon(ABC):
         ctx = ValidationContext()
 
         def check_early_termination():
+            print(self._terminate_early, ctx)
             if self._terminate_early and ctx.dirty:
                 ctx.raise_error()
 
@@ -267,7 +269,7 @@ def string(*, fast_termination=False) -> ZonString:
     Returns:
         ZonString: The string data validator.
     """
-    return ZonString(fast_termination=fast_termination)
+    return ZonString(terminate_early=fast_termination)
 
 
 class ZonString(ZonContainer):

@@ -8,11 +8,6 @@ def validator():
     return zon.string()
 
 
-@pytest.fixture
-def fail_fast_validator():
-    return zon.string(fast_termination=True)
-
-
 def test_str_validate(validator):
     assert validator.validate("1")
 
