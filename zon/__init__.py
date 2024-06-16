@@ -13,16 +13,17 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Self, TypeVar, final
+from typing import Any, Self, TypeVar, final
+from collections.abc import Callable
 from dataclasses import dataclass, field
 
 from .error import ZonError, ZonIssue
 from .traits import HasMax, HasMin
 
+
 @dataclass
 class ValidationContext:
-    """Context used throughout an entire validation run
-    """
+    """Context used throughout an entire validation run"""
 
     _error: ZonError = None
     path: list[str] = field(default_factory=list)
@@ -32,14 +33,12 @@ class ValidationContext:
             self._error = ZonError()
 
     def add_issue(self, issue: ZonIssue):
-        """Adds the given `ZodIssue` to this context's `ZonError`
-        """
+        """Adds the given `ZodIssue` to this context's `ZonError`"""
         self._ensure_error()
         self._error.add_issue(issue)
 
     def add_issues(self, issues: list[ZonIssue]):
-        """Adds the given `ZodIssue`s to this context's `ZonError`
-        """
+        """Adds the given `ZodIssue`s to this context's `ZonError`"""
         self._ensure_error()
         self._error.add_issues(issues)
 
@@ -47,25 +46,35 @@ class ValidationContext:
         """
         Raises the current validation error in this context if it exists.
         """
-        
+
         raise self._error
 
     @property
     def dirty(self):
         return self._error is not None and len(self._error.issues) >= 0
 
+
 T = TypeVar("T")
 
+
 class ValidationRule:
-    def __init__(self, name: str, fn: Callable[[T], bool]):
+    def __init__(self, name: str, fn: Callable[[T], bool], *, additional_data: dict[str, Any] = {}):
         self.fn = fn
         self.name = name
+        self.additional_data = additional_data
 
     def check(self, data: Any, ctx: ValidationContext):
         valid = self.fn(data)
 
         if not valid:
-            ctx.add_issue(ZonIssue(value=data, message=f"Validation failed for type {self.name}", path=[]))
+            ctx.add_issue(
+                ZonIssue(
+                    value=data,
+                    message=f"Validation failed for type {self.name}",
+                    path=[],
+                )
+            )
+
 
 class Zon(ABC):
     """
@@ -121,12 +130,13 @@ class Zon(ABC):
         """
 
         ctx = ValidationContext()
+
         def check_early_termination():
             if self._terminate_early and ctx.dirty:
                 ctx.raise_error()
 
         try:
-            self._default_validate(data, ctx)            
+            self._default_validate(data, ctx)
         except NotImplementedError as ni:
             raise ni
 
@@ -201,10 +211,12 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone = self._clone()
 
-        _clone.validators.append(ValidationRule(
-            "length",
-            lambda data: len(data) < max_value,
-        ))
+        _clone.validators.append(
+            ValidationRule(
+                "length",
+                lambda data: len(data) < max_value,
+            )
+        )
 
         return _clone
 
@@ -217,10 +229,12 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone = self._clone()
 
-        _clone.validators.append(ValidationRule(
-            "length_min",
-            lambda data: len(data) > min_value,
-        ))
+        _clone.validators.append(
+            ValidationRule(
+                "length_min",
+                lambda data: len(data) > min_value,
+            )
+        )
 
         return _clone
 
@@ -233,12 +247,15 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone = self._clone()
 
-        _clone.validators.append(ValidationRule(
-            "length_equal",
-            lambda data: len(data) == length,
-        ))
+        _clone.validators.append(
+            ValidationRule(
+                "length_equal",
+                lambda data: len(data) == length,
+            )
+        )
 
         return _clone
+
 
 def string(*, fast_termination=False) -> ZonString:
     """Returns a validator for string data.
@@ -261,5 +278,3 @@ class ZonString(ZonContainer):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, str):
             ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
-
-    

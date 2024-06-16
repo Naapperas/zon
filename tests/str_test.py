@@ -17,13 +17,13 @@ def test_str_validate(validator):
     assert validator.validate("1")
 
     with pytest.raises(zon.error.ZonError):
-            validator.validate(1.5)
+        validator.validate(1.5)
     with pytest.raises(zon.error.ZonError):
-            validator.validate(1)
+        validator.validate(1)
     with pytest.raises(zon.error.ZonError):
-            validator.validate([1])
+        validator.validate([1])
     with pytest.raises(zon.error.ZonError):
-            validator.validate({"a": 1})
+        validator.validate({"a": 1})
 
 
 def test_str_safe_validate(validator):
@@ -35,6 +35,7 @@ def test_str_safe_validate(validator):
     assert validator.safe_validate([1])[0] is False
     assert validator.safe_validate({"a": 1})[0] is False
 
+
 def test_str_length_equal(validator):
     _validator = validator.length(2)
 
@@ -42,6 +43,7 @@ def test_str_length_equal(validator):
 
     with pytest.raises(zon.error.ZonError):
         _validator.validate("1")
+
 
 def test_str_length_less_than(validator):
     _validator = validator.max(3)
@@ -52,6 +54,7 @@ def test_str_length_less_than(validator):
     with pytest.raises(zon.error.ZonError):
         _validator.validate("123")
 
+
 def test_str_length_greater_than(validator):
     _validator = validator.min(1)
 
@@ -60,6 +63,7 @@ def test_str_length_greater_than(validator):
 
     with pytest.raises(zon.error.ZonError):
         _validator.validate("1")
+
 
 """
 def test_email(validator):

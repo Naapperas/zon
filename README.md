@@ -36,6 +36,9 @@ pip install .
 
 In its essence, `zon` behaves much like `zod`. If you have used `zod`, you will feel right at home with `zon`.
 
+> [!NOTE]  
+> There are some differences in the public API between `zon` and `zod`. Those mostly stem from the fact that Python does not have type inference like Typescript has.
+
 ### Basic types
 
 `zon` features most of `zod`'s basic types:
@@ -49,7 +52,7 @@ zon.none()
 zon.anything()
 ```
 
-Besides this, theres also a `zon.optional()` type, which allows for a value to be either of the type passed as an argument or `None`.
+Besides this, there's also a `zon.optional()` type, which allows for a value to be either of the type passed as an argument or `None`.
 
 ```python
 zon.optional(zon.string())
@@ -130,6 +133,10 @@ schema = zon.record({
 })
 ```
 
+## Examples
+
+Example usage of `zon` can be found in the `examples` directory.
+
 ## Documentation
 
 Documentation is still not available, but it will be soon.
@@ -141,7 +148,7 @@ Tests can be found in the [tests](tests) folder. `zon` uses `pytest` for unit te
 To run the tests, simply run:
 
 ```bash 
-pytest /test
+pytest test
 ```
 
 ## Contributing
