@@ -13,7 +13,7 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Callable, Self, TypeVar, final
+from typing import Any, Callable, Self, TypeVar, final
 from dataclasses import dataclass, field
 
 from .error import ZonError, ZonIssue
@@ -57,6 +57,13 @@ class ValidationContext:
 T = TypeVar("T")
 ValidationRule = Callable[[T, ValidationContext], bool]
 
+class ValidationRule:
+    def __init__(self, fn: Callable[[T, ValidationContext], bool]):
+        self.fn = fn
+
+    def check(self, data: Any, ctx: ValidationContext):
+        return self.fn(data, ctx)
+
 class Zon(ABC):
     """
     Base class for all Zons.
@@ -67,7 +74,7 @@ class Zon(ABC):
     """
 
     def __init__(self, **kwargs):
-        self.validators: dict[str, ValidationRule] = {}
+        self.validators: list[ValidationRule] = []
         """validators that will run when 'validate' is invoked."""
 
         self._terminate_early = kwargs.get("terminate_early", False)
@@ -77,7 +84,7 @@ class Zon(ABC):
         return copy.deepcopy(self)
 
     @abstractmethod
-    def _default_validate(self, data: T, ctx: ValidationContext) -> bool:
+    def _default_validate(self, data: T, ctx: ValidationContext):
         """Default validation for any Zon validator
 
         The contract for this method is the same for any other `ValidationRule`:
@@ -111,30 +118,21 @@ class Zon(ABC):
         """
 
         ctx = ValidationContext()
+        def check_early_termination():
+            if self._terminate_early and ctx.dirty:
+                ctx.raise_error()
 
         try:
-            _passed = self._default_validate(data, ctx)
-        except ZonError as ze:
-            if self._terminate_early:
-                # since we want to terminate early, we can just directly raise the error
-                raise ze
-
-            ctx.add_issues(ze.issues)
+            self._default_validate(data, ctx)            
         except NotImplementedError as ni:
             raise ni
 
-        for validator_type, validator in self.validators.items():
-            try:
-                _passed = validator(data, ctx)
+        check_early_termination()
 
-                return True
-            except ZonError as ze:
-                ctx.add_issues(ze.issues)
+        for validator in self.validators:
+            validator.check(data, ctx)
 
-                if self._terminate_early:
-                    # Since we want to terminate early, we can just directly raise the error
-                    # Following the sequence of the code, we are guaranteed to have errors at this point.
-                    ctx.raise_error()
+            check_early_termination()
 
         if ctx.dirty:
             ctx.raise_error()
@@ -237,9 +235,6 @@ class ZonString(ZonContainer):
     For all purposes, a string is a collection of characters.
     """
 
-    def _default_validate(self, data: T, ctx: ValidationContext) -> bool:
-
+    def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, str):
             ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
-
-        return True

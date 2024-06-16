@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Moved everything into a single file to combat circular reference issues
 - Deprecated `ValidationError` in favor of `ZonError`.
+- Simplified validation logic
 
 ### Removed
 - Removed `between`, `__eq__` and `equals` methods from `ZonNumber`.
