@@ -18,7 +18,8 @@ classifiers = [
 ]
 dependencies = [
   "validators>0.28",
-  "typing_extensions>4.12"
+  "typing_extensions>4.12",
+  "uuid==1.30"
 ]
 
 [project.optional-dependencies]

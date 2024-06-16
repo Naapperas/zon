@@ -13,9 +13,12 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 
 import copy
 from abc import ABC, abstractmethod
-from typing import Any, Self, TypeVar, final
+from typing import Any, Self, TypeVar, final, Literal
 from collections.abc import Callable
 from dataclasses import dataclass, field
+import re
+
+import validators
 
 from .error import ZonError, ZonIssue
 from .traits import HasMax, HasMin
@@ -133,7 +136,6 @@ class Zon(ABC):
         ctx = ValidationContext()
 
         def check_early_termination():
-            print(self._terminate_early, ctx)
             if self._terminate_early and ctx.dirty:
                 ctx.raise_error()
 
@@ -174,7 +176,7 @@ class Zon(ABC):
         return self._validate(data)
 
     @final
-    def safe_validate(self, data: T) -> tuple[bool, T] | tuple[bool, ZonError]:
+    def safe_validate(self, data: T) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
         """Validates the supplied data. This method is different from `validate` in the sense that
         it does not raise an error when validation fails. Instead, it returns an object encapsulating
         either a successful validation result or a validation error.
@@ -281,3 +283,73 @@ class ZonString(ZonContainer):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, str):
             ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
+
+    def email(self) -> Self:
+        """
+        Assert that the value under validation is a valid email.
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "email",
+                validators.email,
+            )
+        )
+
+        return _clone
+    
+    def url(self) -> Self:
+        """
+        Assert that the value under validation is a valid url.
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "url",
+                validators.url,
+            )
+        )
+
+        return _clone
+
+    def emoji(self) -> Self:
+        """Assert that the value under validation is a valid emoji.
+
+        Returns:
+            ZonString: a new zon with the validation rule added
+        """
+
+        raise NotImplementedError
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "emoji",
+                lambda data: re.compile(r"^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$").match(data) is not None,
+            )
+        )
+
+        return _clone
+    
+    def uuid(self) -> Self:
+        """Assert that the value under validation is a valid uuid.
+
+        Returns:
+            ZonString: a new zon with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "uuid",
+                validators.uuid,
+            )
+        )
+
+        return _clone
