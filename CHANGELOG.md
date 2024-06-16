@@ -10,16 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Added more string validation methods.
-- `parse` and `safe_parse` methods.
-- Added `opts` arg to `ZonString.regex` method to allow defining custom error messages.
-- Added `opts` arg to `ZonString.ip` method to allow defining custom error messages and specify the IP version to check against. 
-- Added `unwrap` method to `ZonOptional`.
 
 ### Changed
-- `optional` is now a method inside every `Zon` object.
-- Moved `ZonCollection` and `ZonString` to the base file.
-- Deprecated `validate` (and its private variant `_validate`) in favor of `parse` and `safe_parse` methods.
+- Moved everything into a single file to combat circular reference issues
 - Deprecated `ValidationError` in favor of `ZonError`.
 
 ### Removed
