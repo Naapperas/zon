@@ -19,7 +19,7 @@ class HasMax:
         Defines that a given attribute of the value being validated must be upper-bound by the given parameter.
 
         Args:
-            max_value (int | float): the maximum value (exclusive) that the attribute being validated can have.
+            max_value (int | float): the maximum value (inclusive) that the attribute being validated can have.
         """
 
         raise NotImplementedError("'max' must be implemented by subclasses")
@@ -36,7 +36,7 @@ class HasMin:
         Defines that a given attribute of the value being validated must be lower-bound by the given parameter.
 
         Args:
-            min_value (int | float): the minimum value (exclusive) that the attribute being validated can have.
+            min_value (int | float): the minimum value (inclusive) that the attribute being validated can have.
         """
 
         raise NotImplementedError("'min' must be implemented by subclasses")

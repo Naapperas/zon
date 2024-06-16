@@ -203,7 +203,7 @@ class ZonContainer(Zon, HasMax, HasMin):
     """
 
     def max(self, max_value: int | float) -> Self:
-        """Validates that this container as at most `max_value` elements (exclusive).
+        """Validates that this container as at most `max_value` elements (inclusive).
 
         Args:
             max_value (int | float): the maximum number of elements that this container can have
@@ -213,15 +213,15 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone.validators.append(
             ValidationRule(
-                "length",
-                lambda data: len(data) < max_value,
+                "max_length",
+                lambda data: hasattr(data, '__len__') and len(data) <= max_value,
             )
         )
 
         return _clone
 
     def min(self, min_value: int | float) -> Self:
-        """Validates that this container as at least `max_value` elements (exclusive).
+        """Validates that this container as at least `max_value` elements (inclusive).
 
         Args:
             min_value (int | float): the minimum number of elements that this container can have
@@ -231,12 +231,13 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone.validators.append(
             ValidationRule(
-                "length_min",
-                lambda data: len(data) > min_value,
+                "min_length",
+                lambda data: hasattr(data, '__len__') and len(data) >= min_value,
             )
         )
 
         return _clone
+
 
     def length(self, length: int) -> Self:
         """Validates that this container as exactly `length` elements.
@@ -249,8 +250,8 @@ class ZonContainer(Zon, HasMax, HasMin):
 
         _clone.validators.append(
             ValidationRule(
-                "length_equal",
-                lambda data: len(data) == length,
+                "equal_length",
+                lambda data: hasattr(data, '__len__') and len(data) == length,
             )
         )
 

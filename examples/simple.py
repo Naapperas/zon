@@ -1,6 +1,6 @@
 import zon
 
-validator = zon.string().min(2).max(5)
+validator = zon.string().min(2).max(5).length(3)
 
 for i in range(7):
     print(f"Checking for length={i}")
