@@ -35,6 +35,31 @@ def test_str_safe_validate(validator):
     assert validator.safe_validate([1])[0] is False
     assert validator.safe_validate({"a": 1})[0] is False
 
+def test_str_length_equal(validator):
+    _validator = validator.length(2)
+
+    assert _validator.validate("12")
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("1")
+
+def test_str_length_less_than(validator):
+    _validator = validator.max(3)
+
+    assert _validator.validate("1")
+    assert _validator.validate("12")
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("123")
+
+def test_str_length_greater_than(validator):
+    _validator = validator.min(1)
+
+    assert _validator.validate("123")
+    assert _validator.validate("12")
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate("1")
 
 """
 def test_email(validator):

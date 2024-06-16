@@ -55,14 +55,17 @@ class ValidationContext:
         return self._error is not None and len(self._error.issues) >= 0
 
 T = TypeVar("T")
-ValidationRule = Callable[[T, ValidationContext], bool]
 
 class ValidationRule:
-    def __init__(self, fn: Callable[[T, ValidationContext], bool]):
+    def __init__(self, name: str, fn: Callable[[T], bool]):
         self.fn = fn
+        self.name = name
 
     def check(self, data: Any, ctx: ValidationContext):
-        return self.fn(data, ctx)
+        valid = self.fn(data)
+
+        if not valid:
+            ctx.add_issue(ZonIssue(value=data, message=f"Validation failed for type {self.name}", path=[]))
 
 class Zon(ABC):
     """
@@ -189,33 +192,53 @@ class ZonContainer(Zon, HasMax, HasMin):
     Contains container specific validator rules.
     """
 
-    def max(self, max_value: int | float):
+    def max(self, max_value: int | float) -> Self:
         """Validates that this container as at most `max_value` elements (exclusive).
 
         Args:
             max_value (int | float): the maximum number of elements that this container can have
         """
 
-        # TODO: add check
+        _clone = self._clone()
 
-    def min(self, min_value: int | float):
+        _clone.validators.append(ValidationRule(
+            "length",
+            lambda data: len(data) < max_value,
+        ))
+
+        return _clone
+
+    def min(self, min_value: int | float) -> Self:
         """Validates that this container as at least `max_value` elements (exclusive).
 
         Args:
             min_value (int | float): the minimum number of elements that this container can have
         """
 
-        # TODO: add check
+        _clone = self._clone()
 
-    def length(self, length: int):
+        _clone.validators.append(ValidationRule(
+            "length_min",
+            lambda data: len(data) > min_value,
+        ))
+
+        return _clone
+
+    def length(self, length: int) -> Self:
         """Validates that this container as exactly `length` elements.
 
         Args:
             length (int): the exact number of elements that this container can have
         """
 
-        # TODO: add check
+        _clone = self._clone()
 
+        _clone.validators.append(ValidationRule(
+            "length_equal",
+            lambda data: len(data) == length,
+        ))
+
+        return _clone
 
 def string(*, fast_termination=False) -> ZonString:
     """Returns a validator for string data.
@@ -238,3 +261,5 @@ class ZonString(ZonContainer):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, str):
             ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
+
+    

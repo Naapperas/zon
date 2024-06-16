@@ -5,6 +5,7 @@ Traits useful for various its and bits of Zon code.
 from __future__ import annotations
 
 from abc import abstractmethod
+from typing import Self
 
 
 class HasMax:
@@ -13,7 +14,7 @@ class HasMax:
     """
 
     @abstractmethod
-    def max(self, max_value: int | float):
+    def max(self, max_value: int | float) -> Self:
         """
         Defines that a given attribute of the value being validated must be upper-bound by the given parameter.
 
@@ -30,7 +31,7 @@ class HasMin:
     """
 
     @abstractmethod
-    def min(self, min_value: int | float):
+    def min(self, min_value: int | float) -> Self:
         """
         Defines that a given attribute of the value being validated must be lower-bound by the given parameter.
 
