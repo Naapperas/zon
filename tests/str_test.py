@@ -7,24 +7,24 @@ import zon
 def validator():
     return zon.string()
 
+
 @pytest.fixture
 def fail_fast_validator():
     return zon.string(fast_termination=True)
 
+
 def test_str_validate(validator):
     assert validator.validate("1")
-    
-    def _assert_failure(data):
-        try:
-            validator.validate(data)
-            assert False, "Not a string"
-        except zon.error.ZonError:
-            assert True
-    
-    _assert_failure(1.5)
-    _assert_failure(1)
-    _assert_failure([1])
-    _assert_failure({"a": 1})
+
+    with pytest.raises(zon.error.ZonError):
+            validator.validate(1.5)
+    with pytest.raises(zon.error.ZonError):
+            validator.validate(1)
+    with pytest.raises(zon.error.ZonError):
+            validator.validate([1])
+    with pytest.raises(zon.error.ZonError):
+            validator.validate({"a": 1})
+
 
 def test_str_safe_validate(validator):
     assert validator.safe_validate("1") == (True, "1")

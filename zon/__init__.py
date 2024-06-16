@@ -14,13 +14,48 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 import copy
 from abc import ABC, abstractmethod
 from typing import Callable, Self, TypeVar, final
+from dataclasses import dataclass, field
 
 from .error import ZonError, ZonIssue
 from .traits import HasMax, HasMin
 
-T = TypeVar("T")
-ValidationRule = Callable[[T], bool]
+@dataclass
+class ValidationContext:
+    """Context used throughout an entire validation run
+    """
 
+    _error: ZonError = None
+    path: list[str] = field(default_factory=list)
+
+    def _ensure_error(self):
+        if self._error is None:
+            self._error = ZonError()
+
+    def add_issue(self, issue: ZonIssue):
+        """Adds the given `ZodIssue` to this context's `ZonError`
+        """
+        self._ensure_error()
+        self._error.add_issue(issue)
+
+    def add_issues(self, issues: list[ZonIssue]):
+        """Adds the given `ZodIssue`s to this context's `ZonError`
+        """
+        self._ensure_error()
+        self._error.add_issues(issues)
+
+    def raise_error(self):
+        """
+        Raises the current validation error in this context if it exists.
+        """
+        
+        raise self._error
+
+    @property
+    def dirty(self):
+        return self._error is not None and len(self._error.issues) >= 0
+
+T = TypeVar("T")
+ValidationRule = Callable[[T, ValidationContext], bool]
 
 class Zon(ABC):
     """
@@ -42,12 +77,18 @@ class Zon(ABC):
         return copy.deepcopy(self)
 
     @abstractmethod
-    def _default_validate(self, data: T) -> bool:
+    def _default_validate(self, data: T, ctx: ValidationContext) -> bool:
         """Default validation for any Zon validator
 
         The contract for this method is the same for any other `ValidationRule`:
         - If the validation succeeds, return True
-        - If the validation false, raise a ZonError containing the relevant data
+        - If the validation false, raise a ZonError containing the relevant data.
+
+        The default implementation raises a NotImplementedError.
+
+        Args:
+            data (Any): the piece of data to be validated.
+            ctx (ValidationContext): the context of the validation.
         """
 
         raise NotImplementedError(
@@ -69,38 +110,34 @@ class Zon(ABC):
             NotImplementedError: if the default validation rule was not overriden for this Zon object.
         """
 
-        _error: ZonError = None
-
-        def _update_error(ze: ZonError):
-            nonlocal _error
-            if not _error:
-                _error = ze
-            else:
-                _error.add_issues(ze.issues)
+        ctx = ValidationContext()
 
         try:
-            _passed = self._default_validate(data)
+            _passed = self._default_validate(data, ctx)
         except ZonError as ze:
             if self._terminate_early:
+                # since we want to terminate early, we can just directly raise the error
                 raise ze
 
-            _update_error(ze)
+            ctx.add_issues(ze.issues)
         except NotImplementedError as ni:
             raise ni
 
         for validator_type, validator in self.validators.items():
             try:
-                _passed = validator(data)
+                _passed = validator(data, ctx)
 
                 return True
             except ZonError as ze:
-                _update_error(ze)
+                ctx.add_issues(ze.issues)
 
                 if self._terminate_early:
-                    raise _error from ze
+                    # Since we want to terminate early, we can just directly raise the error
+                    # Following the sequence of the code, we are guaranteed to have errors at this point.
+                    ctx.raise_error()
 
-        if _error is not None:
-            raise _error from None
+        if ctx.dirty:
+            ctx.raise_error()
 
         return True
 
@@ -153,6 +190,7 @@ class ZonContainer(Zon, HasMax, HasMin):
 
     Contains container specific validator rules.
     """
+
     def max(self, max_value: int | float):
         """Validates that this container as at most `max_value` elements (exclusive).
 
@@ -181,7 +219,7 @@ class ZonContainer(Zon, HasMax, HasMin):
         # TODO: add check
 
 
-def string(*, fast_termination = False) -> ZonString:
+def string(*, fast_termination=False) -> ZonString:
     """Returns a validator for string data.
 
     Args:
@@ -192,19 +230,16 @@ def string(*, fast_termination = False) -> ZonString:
     """
     return ZonString(fast_termination=fast_termination)
 
+
 class ZonString(ZonContainer):
     """A Zon that validates that the data is a string.
 
     For all purposes, a string is a collection of characters.
     """
 
-    def _default_validate(self, data: T) -> bool:
+    def _default_validate(self, data: T, ctx: ValidationContext) -> bool:
 
         if not isinstance(data, str):
+            ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
 
-            err = ZonError()
-            err.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
-
-            raise err
-        
         return True

@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- Added `ValidationContext` class to keep track of current validation path and errors up until a certain point.
 
 ### Changed
 - Moved everything into a single file to combat circular reference issues

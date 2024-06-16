@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from typing_extensions import deprecated
 
+
 @deprecated("Use the new ZonError class instead.")
 class ValidationError(Exception):
     """
