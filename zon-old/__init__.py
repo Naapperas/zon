@@ -30,7 +30,7 @@ ValidationRule = Callable[[T], bool]
 class Zon(ABC):
     """
     Base class for all Zons.
-    
+
     A Zon is the basic unit of validation in Zon.
     It is used to validate data, and can be composed with other Zons
     to create more complex validations.
@@ -242,6 +242,7 @@ class ZonOptional(Zon):
         """
 
         return self.zon
+
 
 class ZonAnd(Zon):
     """A Zon that validates that the data is valid for both this Zon and the supplied Zon."""
@@ -609,7 +610,7 @@ class ZonNumber(Zon):
     def __gt__(self, other: int | float) -> "ZonNumber":
         return self.gt(other)
 
-    def gt(self, value: int | float ) -> "ZonNumber":
+    def gt(self, value: int | float) -> "ZonNumber":
         """Assert that the value under validation is greater than a given value.
 
         Args:

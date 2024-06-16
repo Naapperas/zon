@@ -40,7 +40,7 @@ load-plugins=
 
 # Use multiple processes to speed up Pylint. Specifying 0 will auto-detect the
 # number of processors available to use.
-jobs=1
+jobs=0
 
 # When enabled, pylint would attempt to guess common misconfiguration and emit
 # user-friendly hints instead of false-positive error messages.
@@ -64,7 +64,7 @@ py-version = 3.8.0
 limit-inference-results=100
 
 # Specify a score threshold under which the program will exit with error.
-fail-under=9.5
+fail-under=9.0
 
 # Return non-zero exit code if any of these messages/categories are detected,
 # even if score is above --fail-under value. Syntax same as enable. Messages

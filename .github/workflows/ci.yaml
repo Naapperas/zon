@@ -5,18 +5,23 @@ on: [push]
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+      matrix:
+        version: [3.12]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python 3.11
+    - name: Set up Python ${{ matrix.version}}
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: "${{ matrix.version }}"
     
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
+        python -m pip install -r requirements.txt
 
     - name: Install Pylint
       run: pip install pylint
@@ -28,14 +33,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 5
+      matrix:
+        version: [3.12]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python 3.11
+    - name: Set up Python ${{ matrix.version}}
       uses: actions/setup-python@v3
       with:
-        python-version: '3.11'
+        python-version: "${{ matrix.version }}"
     
     - name: Install dependencies
       run: |  
@@ -49,4 +56,4 @@ jobs:
       run: python -m pip install -e .
 
     - name: Run tests
-      run: pytest
+      run: pytest tests

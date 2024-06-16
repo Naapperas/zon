@@ -2,41 +2,34 @@ import pytest
 
 import zon
 
+import uuid
+
 
 @pytest.fixture
 def validator():
     return zon.string()
 
-@pytest.fixture
-def fail_fast_validator():
-    return zon.string(fast_termination=True)
 
-def test_str_validate(validator):
+def test_str(validator):
     assert validator.validate("1")
-    
-    def _assert_failure(data):
-        try:
-            validator.validate(data)
-            assert False, "Not a string"
-        except zon.error.ZonError:
-            assert True
-    
-    _assert_failure(1.5)
-    _assert_failure(1)
-    _assert_failure([1])
-    _assert_failure({"a": 1})
-
-def test_str_safe_validate(validator):
-    assert validator.safe_validate("1") == (True, "1")
-
-    # TODO: check for the specific error?
-    assert validator.safe_validate(1.5)[0] is False
-    assert validator.safe_validate(1)[0] is False
-    assert validator.safe_validate([1])[0] is False
-    assert validator.safe_validate({"a": 1})[0] is False
 
 
-"""
+def test_not_float(validator):
+    assert not validator.validate(1.5)
+
+
+def test_not_int(validator):
+    assert not validator.validate(1)
+
+
+def test_not_list(validator):
+    assert not validator.validate([1])
+
+
+def test_not_record(validator):
+    assert not validator.validate({"a": 1})
+
+
 def test_email(validator):
     _validator = validator.email()
 
@@ -98,4 +91,3 @@ def test_regex(validator):
 
     assert not _validator.validate("abc1")
     assert not _validator.validate("abc def1")
-"""

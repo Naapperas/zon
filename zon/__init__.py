@@ -1,6 +1,6 @@
 """Validator package.
 
-The purpose of this package is to provide a set of functions to validate data, using a Zod-like syntax.
+Flexible validation powered by Python with the expressiveness of a Zod-like API.
 """
 
 from __future__ import annotations
@@ -15,7 +15,8 @@ import copy
 from abc import ABC, abstractmethod
 from typing import Callable, Self, TypeVar, final
 
-from .error import ZonError
+from .error import ZonError, ZonIssue
+from .traits import HasMax, HasMin
 
 T = TypeVar("T")
 ValidationRule = Callable[[T], bool]
@@ -24,43 +25,34 @@ ValidationRule = Callable[[T], bool]
 class Zon(ABC):
     """
     Base class for all Zons.
-    
+
     A Zon is the basic unit of validation in Zon.
     It is used to validate data, and can be composed with other Zons
     to create more complex validations.
     """
 
-    def __init__(self):
-        self.errors: list[ZonError] = []
-        """List of validation errors accumulated"""
-
+    def __init__(self, **kwargs):
         self.validators: dict[str, ValidationRule] = {}
         """validators that will run when 'validate' is invoked."""
 
-        self._setup()
+        self._terminate_early = kwargs.get("terminate_early", False)
 
     def _clone(self) -> Self:
         """Creates a copy of this Zon."""
         return copy.deepcopy(self)
 
-    def _add_error(self, error: ZonError):
-        """Adds an error to this Zon's error output.
-
-        Args:
-            error (ZonError): the validation error to add.
-        """
-        self.errors.append(error)
-
     @abstractmethod
-    def _default_validate(self) -> bool:
+    def _default_validate(self, data: T) -> bool:
         """Default validation for any Zon validator
 
-        The contract for this method is the same for any other ValidationRule:
+        The contract for this method is the same for any other `ValidationRule`:
         - If the validation succeeds, return True
         - If the validation false, raise a ZonError containing the relevant data
         """
 
-        raise NotImplementedError("This method is not implemented for the base Zon class. You need to provide your ")
+        raise NotImplementedError(
+            "This method is not implemented for the base Zon class. You need to provide your "
+        )
 
     @final
     def _validate(self, data: T) -> bool:
@@ -74,7 +66,27 @@ class Zon(ABC):
 
         Raises:
             ZonError: if validation against the supplied data fails.
+            NotImplementedError: if the default validation rule was not overriden for this Zon object.
         """
+
+        _error: ZonError = None
+
+        def _update_error(ze: ZonError):
+            nonlocal _error
+            if not _error:
+                _error = ze
+            else:
+                _error.add_issues(ze.issues)
+
+        try:
+            _passed = self._default_validate(data)
+        except ZonError as ze:
+            if self._terminate_early:
+                raise ze
+
+            _update_error(ze)
+        except NotImplementedError as ni:
+            raise ni
 
         for validator_type, validator in self.validators.items():
             try:
@@ -82,7 +94,15 @@ class Zon(ABC):
 
                 return True
             except ZonError as ze:
-                pass
+                _update_error(ze)
+
+                if self._terminate_early:
+                    raise _error from ze
+
+        if _error is not None:
+            raise _error from None
+
+        return True
 
     @final
     def validate(self, data: T) -> bool:
@@ -115,7 +135,7 @@ class Zon(ABC):
         Raises:
             NotImplementedError: the default implementation of this method
             is not implemented on base Zon class.
-            Exception: if validation fails
+            Exception: if any unexpected exception is encountered
         """
 
         try:
@@ -126,3 +146,65 @@ class Zon(ABC):
             return (False, ze)
         except Exception as e:
             raise e
+
+
+class ZonContainer(Zon, HasMax, HasMin):
+    """A Zon that acts as a container for other types of data.
+
+    Contains container specific validator rules.
+    """
+    def max(self, max_value: int | float):
+        """Validates that this container as at most `max_value` elements (exclusive).
+
+        Args:
+            max_value (int | float): the maximum number of elements that this container can have
+        """
+
+        # TODO: add check
+
+    def min(self, min_value: int | float):
+        """Validates that this container as at least `max_value` elements (exclusive).
+
+        Args:
+            min_value (int | float): the minimum number of elements that this container can have
+        """
+
+        # TODO: add check
+
+    def length(self, length: int):
+        """Validates that this container as exactly `length` elements.
+
+        Args:
+            length (int): the exact number of elements that this container can have
+        """
+
+        # TODO: add check
+
+
+def string(*, fast_termination = False) -> ZonString:
+    """Returns a validator for string data.
+
+    Args:
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonString: The string data validator.
+    """
+    return ZonString(fast_termination=fast_termination)
+
+class ZonString(ZonContainer):
+    """A Zon that validates that the data is a string.
+
+    For all purposes, a string is a collection of characters.
+    """
+
+    def _default_validate(self, data: T) -> bool:
+
+        if not isinstance(data, str):
+
+            err = ZonError()
+            err.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
+
+            raise err
+        
+        return True

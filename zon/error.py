@@ -1,18 +1,11 @@
 """Validation errors for Zons"""
 
-
 from typing import Any
-from typing_extensions import deprecated
 from dataclasses import dataclass
 
-from . import __version__
+from typing_extensions import deprecated
 
-
-@deprecated(
-    deprecated_in="2.0.0",
-    current_version=__version__,
-    details="Use the new ZonError class instead.",
-)
+@deprecated("Use the new ZonError class instead.")
 class ValidationError(Exception):
     """
     Validation error thrown when a validation fails.
@@ -48,6 +41,8 @@ class ZonIssue:
     value: Any
     message: str
     path: list[str]
+
+
 class ZonError(Exception):
     """Validation error thrown when a validation fails."""
 
@@ -66,6 +61,11 @@ class ZonError(Exception):
         """Adds an existing issue to this validation error"""
 
         self.issues.append(issue)
+
+    def add_issues(self, issues: list[ZonIssue]):
+        """Adds a batch of existing issues to this validation error"""
+
+        self.issues.extend(issues)
 
     def __str__(self):
         """Used to covert this exception into a string."""
