@@ -3,6 +3,7 @@
 Flexible validation powered by Python with the expressiveness of a Zod-like API.
 """
 
+# Why is this needed even?
 from __future__ import annotations
 
 __version__ = "2.0.0"
@@ -14,7 +15,7 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 import copy
 from abc import ABC, abstractmethod
 from typing import Any, Self, TypeVar, final, Literal
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 import re
 
@@ -61,10 +62,16 @@ T = TypeVar("T")
 
 
 class ValidationRule:
-    def __init__(self, name: str, fn: Callable[[T], bool], *, additional_data: dict[str, Any] = {}):
+    def __init__(
+        self,
+        name: str,
+        fn: Callable[[T], bool],
+        *,
+        additional_data: Mapping[str, Any] = None,
+    ):
         self.fn = fn
         self.name = name
-        self.additional_data = additional_data
+        self.additional_data = additional_data if additional_data is not None else {}
 
     def check(self, data: Any, ctx: ValidationContext) -> bool:
         valid = self.fn(data)
@@ -79,6 +86,7 @@ class ValidationRule:
             )
 
         return valid
+
 
 class Zon(ABC):
     """
@@ -176,7 +184,9 @@ class Zon(ABC):
         return self._validate(data)
 
     @final
-    def safe_validate(self, data: T) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
+    def safe_validate(
+        self, data: T
+    ) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
         """Validates the supplied data. This method is different from `validate` in the sense that
         it does not raise an error when validation fails. Instead, it returns an object encapsulating
         either a successful validation result or a validation error.
@@ -218,7 +228,7 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "max_length",
-                lambda data: hasattr(data, '__len__') and len(data) <= max_value,
+                lambda data: hasattr(data, "__len__") and len(data) <= max_value,
             )
         )
 
@@ -236,12 +246,11 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "min_length",
-                lambda data: hasattr(data, '__len__') and len(data) >= min_value,
+                lambda data: hasattr(data, "__len__") and len(data) >= min_value,
             )
         )
 
         return _clone
-
 
     def length(self, length: int) -> Self:
         """Validates that this container as exactly `length` elements.
@@ -255,7 +264,7 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "equal_length",
-                lambda data: hasattr(data, '__len__') and len(data) == length,
+                lambda data: hasattr(data, "__len__") and len(data) == length,
             )
         )
 
@@ -277,7 +286,7 @@ def string(*, fast_termination=False) -> ZonString:
 class ZonString(ZonContainer):
     """A Zon that validates that the data is a string.
 
-    For all purposes, a string is a collection of characters.
+    For all purposes, a string is a container of characters.
     """
 
     def _default_validate(self, data: T, ctx: ValidationContext):
@@ -287,6 +296,9 @@ class ZonString(ZonContainer):
     def email(self) -> Self:
         """
         Assert that the value under validation is a valid email.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
         """
 
         _clone = self._clone()
@@ -299,10 +311,13 @@ class ZonString(ZonContainer):
         )
 
         return _clone
-    
+
     def url(self) -> Self:
         """
-        Assert that the value under validation is a valid url.
+        Assert that the value under validation is a valid URL.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
         """
 
         _clone = self._clone()
@@ -320,7 +335,7 @@ class ZonString(ZonContainer):
         """Assert that the value under validation is a valid emoji.
 
         Returns:
-            ZonString: a new zon with the validation rule added
+            ZonString: a new `Zon` with the validation rule added
         """
 
         raise NotImplementedError
@@ -330,17 +345,20 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "emoji",
-                lambda data: re.compile(r"^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$").match(data) is not None,
+                lambda data: re.compile(
+                    r"^(\\p{Extended_Pictographic}|\\p{Emoji_Component})+$"
+                ).match(data)
+                is not None,
             )
         )
 
         return _clone
-    
+
     def uuid(self) -> Self:
-        """Assert that the value under validation is a valid uuid.
+        """Assert that the value under validation is a valid UUID.
 
         Returns:
-            ZonString: a new zon with the validation rule added
+            ZonString: a new `Zon` with the validation rule added
         """
 
         _clone = self._clone()
@@ -349,6 +367,144 @@ class ZonString(ZonContainer):
             ValidationRule(
                 "uuid",
                 validators.uuid,
+            )
+        )
+
+        return _clone
+
+    # TODO: cuid, cuid2, nanoid, ulid
+
+    def regex(self, regex: str | re.Pattern[str]) -> Self:
+        """Assert that the value under validation matches the given regular expression.
+
+        Args:
+            regex (str): the regex to use.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "regex",
+                lambda data: re.match(regex, data) is not None,
+            )
+        )
+
+        return _clone
+
+    def includes(self, needle: str) -> Self:
+        """Assert that the value under validation includes the given string.
+
+        Args:
+            needle (str): the string to look for.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "includes",
+                lambda data: needle in data,
+            )
+        )
+
+        return _clone
+
+    def starts_with(self, prefix: str) -> Self:
+        """Assert that the value under validation starts with the given string.
+
+        Args:
+            prefix (str): the string to look for.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "starts_with",
+                lambda data: data.startswith(prefix),
+            )
+        )
+
+        return _clone
+
+    def ends_with(self, suffix: str) -> Self:
+        """Assert that the value under validation ends with the given string.
+
+        Args:
+            suffix (str): the string to look for.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "ends_with",
+                lambda data: data.endswith(suffix),
+            )
+        )
+
+        return _clone
+
+    def datetime(self, opts: Mapping[str, Any] | None = None) -> Self:
+        """Assert that the value under validation is a valid datetime.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        if opts is None:
+            opts = {}
+
+        # code ported from https://github.com/colinhacks/zod. All credit goes to the original author.
+        def _time_regex_source(opts: Mapping[str, Any]):
+            regex = r"([01]\d|2[0-3]):[0-5]\d:[0-5]\d"
+
+            if "precision" in opts:
+                precision = opts["precision"]
+
+                regex = rf"{regex}\.\d{{{precision}}}"
+            else:
+                regex = rf"{regex}(\.\d+)?"
+
+            return regex
+
+        def _datetime_regex(opts: Mapping[str, Any]):
+            dateRegexSource = r"((\d\d[2468][048]|\d\d[13579][26]|\d\d0[48]|[02468][048]00|[13579][26]00)-02-29|\d{4}-((0[13578]|1[02])-(0[1-9]|[12]\d|3[01])|(0[469]|11)-(0[1-9]|[12]\d|30)|(02)-(0[1-9]|1\d|2[0-8])))"
+
+            regex = f"{dateRegexSource}T{_time_regex_source(opts)}"
+
+            branches: list[str] = []
+            branches.append("Z?" if opts.get("local", False) else "Z")
+            if opts.get("offset", False):
+                branches.append(
+                    r"([+-]\d{2}(:?\d{2})?)"
+                )  # slight deviation from zod's regex, allowing for hour-only offsets
+
+            regex = f"{regex}({'|'.join(branches)})"
+
+            print(regex)
+
+            return re.compile(f"^{regex}$")
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "datetime",
+                lambda data: _datetime_regex(opts).match(data) is not None,
             )
         )
 

@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added dimension tests for `ZonString`
 - Added `examples` folder
 - Added `early failure` mechanism to prevent validation on objects after the first validation error
+- Added explanation regarding `ZonString.datetime()` decisions.
 
 ### Changed
 - Moved everything into a single file to combat circular reference issues

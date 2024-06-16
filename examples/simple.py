@@ -6,6 +6,6 @@ for i in range(7):
     print(f"Checking for length={i}")
 
     try:
-        validator.validate('a' * i)
+        validator.validate("a" * i)
     except zon.error.ZonError as e:
         print(f"Failed: {e}")

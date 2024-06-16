@@ -83,7 +83,14 @@ zon.string().email()
 zon.string().regex(r"^\d{3}-\d{3}-\d{4}$")
 zon.string().uuid()
 zon.string().ip()
+zon.string().datetime()
 ```
+
+#### Datetime
+
+`zod` uses regex-based validation for datetimes, which must be valid [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) strings. However, due to an issue with most JavaScript engines' datetime validation, offsets cannot specify only hours, and `zod` reflects this in their API.
+
+While `zon` could reflect `zod`'s API in this matter, it is best to not constrain users to the problems of another platform, making this one of the aspects where `zon` deviates from `zod`.
 
 ### List
 
