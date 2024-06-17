@@ -22,6 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - Removed `between`, `__eq__` and `equals` methods from `ZonNumber`.
+- Removed `ZonInteger` and `ZonFloat` in favor of new validation rules in `ZonNumber`
+- Removed `true` and `false` methods from `ZonBoolean`
 
 ## [1.1.0] - 2024-04-10
 

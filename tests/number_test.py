@@ -1,3 +1,5 @@
+import math
+
 import pytest
 
 import zon
@@ -18,7 +20,6 @@ def test_number_validate(validator):
         validator.validate([1])
     with pytest.raises(zon.error.ZonError):
         validator.validate({"a": 1})
-
 
 def test_number_safe_validate(validator):
     assert validator.safe_validate(1) == (True, 1)
@@ -72,3 +73,95 @@ def test_number_lte(validator):
 
     with pytest.raises(zon.error.ZonError):
         _validator.validate(3)
+
+
+def test_number_int(validator):
+    _validator = validator.int()
+
+    assert _validator.validate(1)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(1.5)
+
+
+def test_number_float(validator):
+    _validator = validator.float()
+
+    assert _validator.validate(1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(1)
+
+
+def test_number_positive(validator):
+    _validator = validator.positive()
+
+    assert _validator.validate(1)
+    assert _validator.validate(1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(0)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(-1)
+
+
+def test_number_non_negative(validator):
+    _validator = validator.non_negative()
+
+    assert _validator.validate(0)
+    assert _validator.validate(1)
+    assert _validator.validate(1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(-1)
+
+
+def test_number_negative(validator):
+    _validator = validator.negative()
+
+    assert _validator.validate(-1)
+    assert _validator.validate(-1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(0)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(1)
+
+
+def test_number_non_positive(validator):
+    _validator = validator.non_positive()
+
+    assert _validator.validate(0)
+    assert _validator.validate(-1)
+    assert _validator.validate(-1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(1)
+
+
+def test_number_multiple_of(validator):
+    _validator = validator.multiple_of(2)
+
+    assert _validator.validate(2)
+    assert _validator.validate(4)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(1)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(3)
+
+
+def test_number_finite(validator):
+    _validator = validator.finite()
+
+    assert _validator.validate(1)
+    assert _validator.validate(1.5)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(math.inf)
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(-math.inf)

@@ -18,6 +18,7 @@ from typing import Any, Self, TypeVar, final, Literal
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
 import re
+import math
 
 import validators
 
@@ -567,7 +568,7 @@ class ZonString(ZonContainer):
         return _clone
 
 
-def number(*, fast_termination=False) -> ZonString:
+def number(*, fast_termination=False) -> ZonNumber:
     """Returns a validator for numeric data.
 
     Args:
@@ -579,7 +580,7 @@ def number(*, fast_termination=False) -> ZonString:
     return ZonNumber(terminate_early=fast_termination)
 
 
-class ZonNumber(Zon):
+class ZonNumber(Zon, HasMax, HasMin):
     """A Zon that validates that the data is a number."""
 
     def _default_validate(self, data: T, ctx: ValidationContext):
@@ -628,6 +629,9 @@ class ZonNumber(Zon):
 
         return _clone
 
+    def max(self, max_value: int | float) -> Self:
+        return self.gte(max_value)
+
     def lt(self, max_ex: float | int) -> Self:
         """Assert that the value under validation is less than the given number.
 
@@ -669,3 +673,175 @@ class ZonNumber(Zon):
         )
 
         return _clone
+
+    def min(self, min_value: int | float) -> Self:
+        return self.lte(min_value)
+
+    def int(self) -> Self:
+        """Assert that the value under validation is an integer.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "int",
+                lambda data: isinstance(data, int),
+            )
+        )
+
+        return _clone
+
+    def float(self) -> Self:
+        """Assert that the value under validation is a float.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "float",
+                lambda data: isinstance(data, float),
+            )
+        )
+
+        return _clone
+
+    def positive(self) -> Self:
+        """Assert that the value under validation is a positive number.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "positive",
+                lambda data: data > 0,
+            )
+        )
+
+        return _clone
+
+    def negative(self) -> Self:
+        """Assert that the value under validation is a negative number.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "negative",
+                lambda data: data < 0,
+            )
+        )
+
+        return _clone
+
+    def non_negative(self) -> Self:
+        """Assert that the value under validation is a non-negative number.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "non_negative",
+                lambda data: data >= 0,
+            )
+        )
+
+        return _clone
+
+    def non_positive(self) -> Self:
+        """Assert that the value under validation is a non-positive number.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "non_positive",
+                lambda data: data <= 0,
+            )
+        )
+
+        return _clone
+
+    def multiple_of(self, base: int | float) -> Self:
+        """Assert that the value under validation is a multiple of the given number.
+
+        Args:
+            base (int): the number to compare against.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "multiple_of",
+                lambda data: data % base == 0,
+            )
+        )
+
+        return _clone
+
+    def step(self, base: int | float) -> Self:
+        return self.multiple_of(base)
+
+    def finite(self) -> Self:
+        """Assert that the value under validation is a finite number.
+
+        Returns:
+            ZonNumber: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "finite",
+                lambda data: not math.isinf(data),
+            )
+        )
+
+        return _clone
+
+def boolean(*, fast_termination=False) -> ZonBoolean:
+    """Returns a validator for boolean data.
+
+    Args:
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonBoolean: The boolean data validator.
+    """
+    return ZonBoolean(terminate_early=fast_termination)
+
+class ZonBoolean(Zon):
+    """A Zon that validates that the data is a boolean.
+    """
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        if not isinstance(data, bool):
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid boolean", path=[]))
