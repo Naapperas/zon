@@ -63,7 +63,9 @@ T = TypeVar("T")
 
 
 class ValidationRule:
-    """_summary_"""
+    """
+    Custom validation rul used to add more complex validation rules to an existing `Zon`
+    """
 
     def __init__(
         self,
@@ -77,7 +79,16 @@ class ValidationRule:
         self.additional_data = additional_data if additional_data is not None else {}
 
     def check(self, data: Any, ctx: ValidationContext) -> bool:
-        """ """
+        """
+        Check this validation rule against the supplied data.
+
+        Args:
+            data (Any): the piece of data to be validated.
+            ctx (ValidationContext): the context in which the validation is being run.
+
+        Returns:
+            bool: True if the data is valid, False otherwise.
+        """
 
         valid = False
         try:
@@ -225,6 +236,54 @@ class Zon(ABC):
         except Exception as e:
             raise e
 
+    def and_also(self, other: Zon) -> Self:
+        """Returns a validator that validates that the data is valid for both this and the supplied validators.
+
+        Args:
+            other (Zon): the second validator
+
+        Returns:
+            ZonIntersection: The intersection data validator.
+        """
+
+        return intersection(self, other)
+
+
+def intersection(zon1: Zon, zon2: Zon, *, fast_termination=False) -> ZonIntersection:
+    """Returns a validator that validates that the data is valid for both validators supplied.
+
+    Args:
+        zon1 (Zon): the first validator
+        zon2 (Zon): the second validator
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonIntersection: The intersection data validator.
+    """
+    return ZonIntersection(zon1, zon2, terminate_early=fast_termination)
+
+
+class ZonIntersection(Zon):
+    """A Zon that validates that the data is valid for both this Zon and the supplied Zon."""
+
+    def __init__(self, zon1: Zon, zon2: Zon, /, **kwargs):
+        super().__init__(**kwargs)
+        self.zon1 = zon1
+        self.zon2 = zon2
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        (zon_1_parsed, data1_or_error) = self.zon1.safe_validate(data)
+
+        if not zon_1_parsed:
+            ctx.add_issues(data1_or_error.issues)
+            return
+
+        (zon_2_parsed, data2_or_error) = self.zon2.safe_validate(data)
+
+        if not zon_2_parsed:
+            ctx.add_issues(data2_or_error.issues)
+            return
+
 
 class ZonContainer(Zon, HasMax, HasMin):
     """A Zon that acts as a container for other types of data.
@@ -296,6 +355,7 @@ def string(*, fast_termination=False) -> ZonString:
     Returns:
         ZonString: The string data validator.
     """
+
     return ZonString(terminate_early=fast_termination)
 
 
@@ -577,6 +637,7 @@ def number(*, fast_termination=False) -> ZonNumber:
     Returns:
         ZonNumber: The number data validator.
     """
+
     return ZonNumber(terminate_early=fast_termination)
 
 
@@ -837,6 +898,7 @@ def boolean(*, fast_termination=False) -> ZonBoolean:
     Returns:
         ZonBoolean: The boolean data validator.
     """
+
     return ZonBoolean(terminate_early=fast_termination)
 
 
@@ -858,6 +920,7 @@ def literal(value: Any, /, *, fast_termination=False) -> ZonLiteral:
     Returns:
         ZonBoolean: The literal data validator.
     """
+
     return ZonLiteral(value, terminate_early=fast_termination)
 
 
