@@ -827,6 +827,7 @@ class ZonNumber(Zon, HasMax, HasMin):
 
         return _clone
 
+
 def boolean(*, fast_termination=False) -> ZonBoolean:
     """Returns a validator for boolean data.
 
@@ -838,10 +839,41 @@ def boolean(*, fast_termination=False) -> ZonBoolean:
     """
     return ZonBoolean(terminate_early=fast_termination)
 
+
 class ZonBoolean(Zon):
-    """A Zon that validates that the data is a boolean.
-    """
+    """A Zon that validates that the data is a boolean."""
 
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, bool):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid boolean", path=[]))
+
+
+def literal(value: Any, /, *, fast_termination=False) -> ZonLiteral:
+    """Returns a validator for a given literal value.
+
+    Args:
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+        value: the value that must be matched
+
+    Returns:
+        ZonBoolean: The literal data validator.
+    """
+    return ZonLiteral(value, terminate_early=fast_termination)
+
+
+class ZonLiteral(Zon):
+    """A Zon that validates that the data is one of the given literals."""
+
+    def __init__(self, value: Any, /, **kwargs):
+        super().__init__(**kwargs)
+        self._value = value
+
+    @property
+    def value(self):
+        return self._value
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        if data != self._value:
+            ctx.add_issue(
+                ZonIssue(value=data, message=f"Expected {self._value}", path=[])
+            )

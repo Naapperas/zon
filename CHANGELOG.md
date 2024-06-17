@@ -9,11 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Added `ValidationContext` class to keep track of current validation path and errors up until a certain point.
-- Implemented non-default validation
-- Added dimension tests for `ZonString`
 - Added `examples` folder
 - Added `early failure` mechanism to prevent validation on objects after the first validation error
 - Added explanation regarding `ZonString.datetime()` decisions.
+- Added `ZonLiteral` class
 
 ### Changed
 - Moved everything into a single file to combat circular reference issues

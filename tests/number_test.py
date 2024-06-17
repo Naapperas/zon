@@ -21,6 +21,7 @@ def test_number_validate(validator):
     with pytest.raises(zon.error.ZonError):
         validator.validate({"a": 1})
 
+
 def test_number_safe_validate(validator):
     assert validator.safe_validate(1) == (True, 1)
     assert validator.safe_validate(1.5) == (True, 1.5)

@@ -7,6 +7,7 @@ import zon
 def validator():
     return zon.boolean()
 
+
 def test_boolean_validate(validator):
     assert validator.validate(True)
     assert validator.validate(False)
@@ -21,6 +22,7 @@ def test_boolean_validate(validator):
         validator.validate(1)
     with pytest.raises(zon.error.ZonError):
         validator.validate(1.5)
+
 
 def test_boolean_safe_validate(validator):
     assert validator.safe_validate(True) == (True, True)
