@@ -2,18 +2,21 @@ import pytest
 
 import zon
 
+
 @pytest.fixture
 def base_validator():
     return zon.string()
 
+
 def test_optional_get_value(base_validator):
-    assert base_validator.optional().zon is base_validator
+    assert base_validator.optional().unwrap() is base_validator
+
 
 class TestOptionalMethod:
     @pytest.fixture
     def validator(self, base_validator):
         return base_validator.optional()
-    
+
     def test_optional_validate(self, validator):
         assert validator.validate(None)
         assert validator.validate("abc")
@@ -33,7 +36,7 @@ class TestOptionalOuterFunction:
     @pytest.fixture
     def validator(self, base_validator):
         return zon.optional(base_validator)
-    
+
     def test_optional_validate(self, validator):
         assert validator.validate(None)
         assert validator.validate("abc")

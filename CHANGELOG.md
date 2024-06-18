@@ -12,7 +12,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `examples` folder
 - Added `early failure` mechanism to prevent validation on objects after the first validation error
 - Added explanation regarding `ZonString.datetime()` decisions.
-- Added `ZonLiteral` class
+- Added `ZonLiteral` and `ZonEnum` classes
+- Added more `ZonRecord` methods
 
 ### Changed
 - Moved everything into a single file to combat circular reference issues

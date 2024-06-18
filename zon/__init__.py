@@ -12,10 +12,15 @@ __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
 __copyright__ = "Copyright 2023, Nuno Pereira"
 
+# TODO: better typing.
+# Things to consider:
+# - Container and other collections.abc types
+# - Typing with Self
+
 import copy
 from abc import ABC, abstractmethod
 from typing import Any, Self, TypeVar, final, Literal
-from collections.abc import Callable, Mapping
+from collections.abc import Callable, Mapping, Sequence  # TODO: explore Container type
 from dataclasses import dataclass, field
 import re
 import math
@@ -24,6 +29,31 @@ import validators
 
 from .error import ZonError, ZonIssue
 from .traits import HasMax, HasMin
+
+__all__ = [
+    "Zon",
+    # "ZonArray",
+    "ZonBoolean",
+    "boolean",
+    # "ZonDate",
+    # "ZonDateTime",
+    # "ZonNone",
+    "ZonNumber",
+    "number",
+    "ZonRecord",
+    "record",
+    "ZonString",
+    "string",
+    "ZonOptional",
+    "optional",
+    "ZonIntersection",
+    "intersection",
+    "ZonEnum",
+    "enum",
+    "ZonLiteral",
+    "literal",
+    # "ZonUnion",
+]
 
 
 @dataclass
@@ -257,6 +287,7 @@ class Zon(ABC):
 
         return optional(self)
 
+
 def intersection(zon1: Zon, zon2: Zon, *, fast_termination=False) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for both validators supplied.
 
@@ -305,16 +336,17 @@ def optional(zon: Zon, fast_termination=False) -> ZonIntersection:
     """
     return ZonOptional(zon, terminate_early=fast_termination)
 
+
 class ZonOptional(Zon):
     """A Zon that makes its data validation optional."""
 
     def __init__(self, zon: Zon, **kwargs):
         super().__init__(**kwargs)
-        self.zon = zon
+        self._zon = zon
 
     def _default_validate(self, data, ctx):
         if data:
-            (passed, data_or_error) = self.zon.safe_validate(data)
+            (passed, data_or_error) = self._zon.safe_validate(data)
 
             if not passed:
                 ctx.add_issues(data_or_error.issues)
@@ -326,7 +358,8 @@ class ZonOptional(Zon):
             Zon: the wrapped Zon
         """
 
-        return self.zon
+        return self._zon
+
 
 class ZonContainer(Zon, HasMax, HasMin):
     """A Zon that acts as a container for other types of data.
@@ -706,7 +739,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "gt",
-                lambda data: data > min_ex,
+                lambda data: data is not None and data > min_ex,
             )
         )
 
@@ -727,7 +760,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "gte",
-                lambda data: data >= min_in,
+                lambda data: data is not None and data >= min_in,
             )
         )
 
@@ -751,7 +784,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "lt",
-                lambda data: data < max_ex,
+                lambda data: data is not None and data < max_ex,
             )
         )
 
@@ -772,7 +805,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "lte",
-                lambda data: data <= max_in,
+                lambda data: data is not None and data <= max_in,
             )
         )
 
@@ -829,7 +862,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "positive",
-                lambda data: data > 0,
+                lambda data: data is not None and data > 0,
             )
         )
 
@@ -847,7 +880,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "negative",
-                lambda data: data < 0,
+                lambda data: data is not None and data < 0,
             )
         )
 
@@ -865,7 +898,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "non_negative",
-                lambda data: data >= 0,
+                lambda data: data is not None and data >= 0,
             )
         )
 
@@ -883,7 +916,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "non_positive",
-                lambda data: data <= 0,
+                lambda data: data is not None and data <= 0,
             )
         )
 
@@ -904,7 +937,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "multiple_of",
-                lambda data: data % base == 0,
+                lambda data: data is not None and data % base == 0,
             )
         )
 
@@ -925,7 +958,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "finite",
-                lambda data: not math.isinf(data),
+                lambda data: data is not None and not math.isinf(data),
             )
         )
 
@@ -983,3 +1016,261 @@ class ZonLiteral(Zon):
             ctx.add_issue(
                 ZonIssue(value=data, message=f"Expected {self._value}", path=[])
             )
+
+
+def enum(options: Sequence[str], /, *, fast_termination=False) -> ZonEnum:
+    """Returns a validator for an enum.
+
+    Args:
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+        options: the values that must be matched
+
+    Returns:
+        ZodEnum: The enum data validator.
+    """
+
+    return ZonEnum(options, terminate_early=fast_termination)
+
+
+class ZonEnum(Zon):
+    """A Zon that validates that the data is one of the given values
+
+    This class mimics the behavior of `zod`'s own enums, not TypeScript enums.
+    """
+
+    def __init__(self, options: Sequence[str], **kwargs):
+        super().__init__(**kwargs)
+        self._options: set[str] = options
+
+    @property
+    def enum(self) -> set[str]:
+        """
+        The enum variants that this validator allows.
+        """
+        return set(self._options)
+
+    def _default_validate(self, data, ctx):
+        if data not in self._options:
+            ctx.add_issue(
+                ZonIssue(
+                    value=data, message=f"Expected one of {self._options}", path=[]
+                )
+            )
+
+    def exclude(self, options: Sequence[str]) -> Self:
+        """
+        Excludes the given options from the enum.
+
+        Args:
+            options (Sequence[str]): the options to exclude.
+
+        Returns:
+            ZonEnum: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone._options = self._options - set(options)
+
+        return _clone
+
+    def extract(self, options: Sequence[str]) -> Self:
+        """
+        Extracts the given options from the enum.
+
+        Args:
+            options (Sequence[str]): the options to extract.
+
+        Returns:
+            ZonEnum: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone._options = self._options & set(options)
+
+        return _clone
+
+
+def record(properties: dict[str, Zon], /, *, fast_termination=False) -> ZonRecord:
+    """Returns a validator for a record.
+
+    Args:
+        properties (dict[str, Zon]): the shape of the record
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonRecord: The record data validator.
+    """
+
+    return ZonRecord(properties, terminate_early=fast_termination)
+
+
+class ZonRecord(Zon):
+    """A Zon that validates that the data is a record with the provided shape."""
+
+    def __init__(self, shape: Mapping[str, Zon], **kwargs):
+        super().__init__(**kwargs)
+        self._shape = shape
+
+    def _default_validate(self, data, ctx: ValidationContext):
+
+        if not isinstance(data, dict):
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid object", path=[]))
+
+            if self._terminate_early:
+                return
+
+        for key, zon in self._shape.items():
+            # TODO: need to verify path
+            # maybe instantiate new context here and compute path from there?
+
+            # default to None since this way we also validate the attribute if it is optional
+            validation_value = data.get(key, None)
+
+            (validated, data_or_error) = zon.safe_validate(validation_value)
+
+            if not validated:
+                ctx.add_issues(data_or_error.issues)
+
+                if self._terminate_early:
+                    return
+
+    @property
+    def shape(self) -> Mapping[str, Zon]:
+        return self._shape
+
+    def keyof(self) -> ZonEnum:
+        """Returns a validator for the keys of an object"""
+
+        return enum(self._shape.keys())
+
+    def extend(self, extra_properties: Mapping[str, Zon]) -> Self:
+        """
+        Extends the shape of the record with the given properties.
+
+        Args:
+            extra_properties (Mapping[str, Zon]): the properties to extend the shape with.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        return ZonRecord(
+            {**self.shape, **extra_properties}, terminate_early=self._terminate_early
+        )
+
+    def merge(self, other: ZonRecord) -> Self:
+        """
+        Merges the shape of the record with the given properties.
+
+        Args:
+            other (ZonRecord): the properties to extend the shape with.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        return self.extend(other.shape)
+
+    def pick(self, attributes: Mapping[str, Literal[True]]) -> ZonRecord:
+        """
+        Picks the given attributes from the record.
+
+        Args:
+            attributes (Mapping[str, Literal[True]]): the attributes to pick.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        return ZonRecord(
+            {k: v for k, v in self.shape.items() if attributes.get(k, False)},
+            terminate_early=self._terminate_early,
+        )
+
+    def omit(self, attributes: Mapping[str, Literal[True]]) -> ZonRecord:
+        """
+        Omits the given attributes from the record.
+
+        Args:
+            attributes (Mapping[str, Literal[True]]): the attributes to omit.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        return ZonRecord(
+            {k: v for k, v in self.shape.items() if not attributes.get(k, False)},
+            terminate_early=self._terminate_early,
+        )
+
+    def partial(
+        self, /, optional_properties: Mapping[str, Literal[True]] | None = None
+    ) -> ZonRecord:
+        """
+        Marks the given attributes as optional.
+
+        Args:
+            optional_properties (Mapping[str, Literal[True]]): the attributes to mark as optional.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        if not optional_properties:
+            optional_properties = {k: True for k in self.shape.keys()}
+
+        return ZonRecord(
+            {
+                k: (v.optional() if optional_properties.get(k, False) else v)
+                for k, v in self.shape.items()
+            },
+            terminate_early=self._terminate_early,
+        )
+
+    def deep_partial(self) -> ZonRecord:
+        """
+        Marks all attributes as optional.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        def _partialify(v: Zon) -> ZonOptional:
+            if isinstance(v, ZonRecord):
+                return ZonRecord(
+                    {k: _partialify(_v) for k, _v in v.shape.items()},
+                    terminate_early=v._terminate_early,
+                ).optional()
+
+            # if isinstance(v, ZonArray):
+            #     return ZonArray(_partialify(v.item_type))
+
+            return v.optional()
+
+        return ZonRecord(
+            {k: _partialify(v) for k, v in self.shape.items()},
+            terminate_early=self._terminate_early,
+        )
+
+    def required(
+        self, /, required_properties: Mapping[str, Literal[True]] | None = None
+    ) -> ZonRecord:
+
+        if not optional_properties:
+            optional_properties = {k: True for k in self.shape.keys()}
+
+        return ZonRecord(
+            {
+                k: (
+                    (v.unwrap() if isinstance(v, ZonOptional) else v)
+                    if required_properties.get(k, False)
+                    else v
+                )
+                for k, v in self.shape.items()
+            },
+            terminate_early=self._terminate_early,
+        )
+
+    

@@ -8,6 +8,9 @@ version = "1.1.0"
 authors = [
   { name="Nuno Pereira", email="nunoafonso2002@gmail.com" },
 ]
+maintainers = [
+  { name="Nuno Pereira", email="nunoafonso2002@gmail.com" },
+]
 description = "A Zod-like validation library for Python"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -28,6 +31,7 @@ dev = [
   "build",
   "pylint",
   "pytest",
+  "pylint-pytest",
 ]
 
 [project.urls]
