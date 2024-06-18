@@ -236,7 +236,7 @@ class Zon(ABC):
         except Exception as e:
             raise e
 
-    def and_also(self, other: Zon) -> Self:
+    def and_also(self, other: Zon) -> ZonIntersection:
         """Returns a validator that validates that the data is valid for both this and the supplied validators.
 
         Args:
@@ -248,6 +248,14 @@ class Zon(ABC):
 
         return intersection(self, other)
 
+    def optional(self) -> ZonOptional:
+        """Returns a validator that validates that the data is valid for this validator if it exists.
+
+        Returns:
+            ZonOptional: The optional data validator.
+        """
+
+        return optional(self)
 
 def intersection(zon1: Zon, zon2: Zon, *, fast_termination=False) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for both validators supplied.
@@ -284,6 +292,41 @@ class ZonIntersection(Zon):
             ctx.add_issues(data2_or_error.issues)
             return
 
+
+def optional(zon: Zon, fast_termination=False) -> ZonIntersection:
+    """Returns a validator that validates that the data is valid for this validator if it exists.
+
+    Args:
+        zon (Zon): the supplied validator
+        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
+
+    Returns:
+        ZonIntersection: The intersection data validator.
+    """
+    return ZonOptional(zon, terminate_early=fast_termination)
+
+class ZonOptional(Zon):
+    """A Zon that makes its data validation optional."""
+
+    def __init__(self, zon: Zon, **kwargs):
+        super().__init__(**kwargs)
+        self.zon = zon
+
+    def _default_validate(self, data, ctx):
+        if data:
+            (passed, data_or_error) = self.zon.safe_validate(data)
+
+            if not passed:
+                ctx.add_issues(data_or_error.issues)
+
+    def unwrap(self) -> Zon:
+        """Extracts the wrapped Zon from this ZonOptional.
+
+        Returns:
+            Zon: the wrapped Zon
+        """
+
+        return self.zon
 
 class ZonContainer(Zon, HasMax, HasMin):
     """A Zon that acts as a container for other types of data.
