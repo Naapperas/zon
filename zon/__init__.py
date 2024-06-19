@@ -17,9 +17,11 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 # - Container and other collections.abc types
 # - Typing with Self
 
+# TODO: remove early_termination (was giving errors in list validators)
+
 import copy
-from abc import ABC, abstractmethod
-from typing import Any, Self, TypeVar, final, Literal
+from abc import ABC, abstractmethod, update_abstractmethods
+from typing import Any, Self, TypeVar, final, Literal, Never
 from collections.abc import Callable, Mapping, Sequence  # TODO: explore Container type
 from dataclasses import dataclass, field
 import re
@@ -78,7 +80,7 @@ class ValidationContext:
         self._ensure_error()
         self._error.add_issues(issues)
 
-    def raise_error(self):
+    def raise_error(self) -> Never:
         """
         Raises the current validation error in this context if it exists.
         """
@@ -146,6 +148,7 @@ class ValidationRule:
         return valid
 
 
+@update_abstractmethods
 class Zon(ABC):
     """
     Base class for all Zons.
@@ -158,8 +161,6 @@ class Zon(ABC):
     def __init__(self, **kwargs):
         self.validators: list[ValidationRule] = []
         """validators that will run when 'validate' is invoked."""
-
-        self._terminate_early = kwargs.get("terminate_early", False)
 
     def _clone(self) -> Self:
         """Creates a copy of this Zon."""
@@ -201,8 +202,8 @@ class Zon(ABC):
 
         ctx = ValidationContext()
 
-        def check_early_termination():
-            if self._terminate_early and ctx.dirty:
+        def raise_if_dirty():
+            if ctx.dirty:
                 ctx.raise_error()
 
         try:
@@ -210,15 +211,12 @@ class Zon(ABC):
         except NotImplementedError as ni:
             raise ni
 
-        check_early_termination()
+        raise_if_dirty()
 
         for validator in self.validators:
             validator.check(data, ctx)
 
-            check_early_termination()
-
-        if ctx.dirty:
-            ctx.raise_error()
+        raise_if_dirty()
 
         return True
 
@@ -288,19 +286,27 @@ class Zon(ABC):
 
         return optional(self)
 
+    def list(self) -> ZonList:
+        """Returns a validator that validates a list whose elements are valid under this validator.
 
-def intersection(zon1: Zon, zon2: Zon, *, fast_termination=False) -> ZonIntersection:
+        Returns:
+            ZonArray: The list data validator.
+        """
+
+        return element_list(self)
+
+def intersection(zon1: Zon, zon2: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for both validators supplied.
 
     Args:
         zon1 (Zon): the first validator
         zon2 (Zon): the second validator
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonIntersection: The intersection data validator.
     """
-    return ZonIntersection(zon1, zon2, terminate_early=fast_termination)
+
+    return ZonIntersection(zon1, zon2)
 
 
 class ZonIntersection(Zon):
@@ -325,17 +331,16 @@ class ZonIntersection(Zon):
             return
 
 
-def optional(zon: Zon, fast_termination=False) -> ZonIntersection:
+def optional(zon: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for this validator if it exists.
 
     Args:
         zon (Zon): the supplied validator
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonIntersection: The intersection data validator.
     """
-    return ZonOptional(zon, terminate_early=fast_termination)
+    return ZonOptional(zon)
 
 
 class ZonOptional(Zon):
@@ -423,17 +428,14 @@ class ZonContainer(Zon, HasMax, HasMin):
         return _clone
 
 
-def string(*, fast_termination=False) -> ZonString:
+def string() -> ZonString:
     """Returns a validator for string data.
-
-    Args:
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonString: The string data validator.
     """
 
-    return ZonString(terminate_early=fast_termination)
+    return ZonString()
 
 
 class ZonString(ZonContainer):
@@ -705,17 +707,14 @@ class ZonString(ZonContainer):
         return _clone
 
 
-def number(*, fast_termination=False) -> ZonNumber:
+def number() -> ZonNumber:
     """Returns a validator for numeric data.
-
-    Args:
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonNumber: The number data validator.
     """
 
-    return ZonNumber(terminate_early=fast_termination)
+    return ZonNumber()
 
 
 class ZonNumber(Zon, HasMax, HasMin):
@@ -966,17 +965,14 @@ class ZonNumber(Zon, HasMax, HasMin):
         return _clone
 
 
-def boolean(*, fast_termination=False) -> ZonBoolean:
+def boolean() -> ZonBoolean:
     """Returns a validator for boolean data.
-
-    Args:
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonBoolean: The boolean data validator.
     """
 
-    return ZonBoolean(terminate_early=fast_termination)
+    return ZonBoolean()
 
 
 class ZonBoolean(Zon):
@@ -987,18 +983,17 @@ class ZonBoolean(Zon):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid boolean", path=[]))
 
 
-def literal(value: Any, /, *, fast_termination=False) -> ZonLiteral:
+def literal(value: Any, /) -> ZonLiteral:
     """Returns a validator for a given literal value.
 
     Args:
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
         value: the value that must be matched
 
     Returns:
         ZonBoolean: The literal data validator.
     """
 
-    return ZonLiteral(value, terminate_early=fast_termination)
+    return ZonLiteral(value)
 
 
 class ZonLiteral(Zon):
@@ -1019,18 +1014,17 @@ class ZonLiteral(Zon):
             )
 
 
-def enum(options: Sequence[str], /, *, fast_termination=False) -> ZonEnum:
+def enum(options: Sequence[str], /) -> ZonEnum:
     """Returns a validator for an enum.
 
     Args:
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
         options: the values that must be matched
 
     Returns:
         ZodEnum: The enum data validator.
     """
 
-    return ZonEnum(options, terminate_early=fast_termination)
+    return ZonEnum(options)
 
 
 class ZonEnum(Zon):
@@ -1093,18 +1087,17 @@ class ZonEnum(Zon):
         return _clone
 
 
-def record(properties: dict[str, Zon], /, *, fast_termination=False) -> ZonRecord:
+def record(properties: dict[str, Zon], /) -> ZonRecord:
     """Returns a validator for a record.
 
     Args:
         properties (dict[str, Zon]): the shape of the record
-        fast_termination (bool, optional): whether this validator's validation should stop as soon as an error occurs. Defaults to False.
 
     Returns:
         ZonRecord: The record data validator.
     """
 
-    return ZonRecord(properties, terminate_early=fast_termination)
+    return ZonRecord(properties)
 
 
 class ZonRecord(Zon):
@@ -1133,8 +1126,7 @@ class ZonRecord(Zon):
         if not isinstance(data, dict):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid object", path=[]))
 
-            if self._terminate_early:
-                return
+            return
 
         extra_keys: set[str] = {}
         if (
@@ -1155,8 +1147,6 @@ class ZonRecord(Zon):
             if not validated:
                 ctx.add_issues(data_or_error.issues)
 
-                if self._terminate_early:
-                    return
 
         if self._catchall is None:
             match self.unknown_key_policy:
@@ -1188,9 +1178,6 @@ class ZonRecord(Zon):
                 if not valid:
                     ctx.add_issues(data_or_error.issues)
 
-                    if self._terminate_early:
-                        return
-
     @property
     def shape(self) -> Mapping[str, Zon]:
         return self._shape
@@ -1212,7 +1199,9 @@ class ZonRecord(Zon):
         """
 
         return ZonRecord(
-            {**self.shape, **extra_properties}, terminate_early=self._terminate_early
+            {**self.shape, **extra_properties},
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def merge(self, other: ZonRecord) -> Self:
@@ -1241,7 +1230,8 @@ class ZonRecord(Zon):
 
         return ZonRecord(
             {k: v for k, v in self.shape.items() if attributes.get(k, False)},
-            terminate_early=self._terminate_early,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def omit(self, attributes: Mapping[str, Literal[True]]) -> ZonRecord:
@@ -1257,7 +1247,8 @@ class ZonRecord(Zon):
 
         return ZonRecord(
             {k: v for k, v in self.shape.items() if not attributes.get(k, False)},
-            terminate_early=self._terminate_early,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def partial(
@@ -1281,7 +1272,8 @@ class ZonRecord(Zon):
                 k: (v.optional() if optional_properties.get(k, False) else v)
                 for k, v in self.shape.items()
             },
-            terminate_early=self._terminate_early,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def deep_partial(self) -> ZonRecord:
@@ -1296,7 +1288,6 @@ class ZonRecord(Zon):
             if isinstance(v, ZonRecord):
                 return ZonRecord(
                     {k: _partialify(_v) for k, _v in v.shape.items()},
-                    terminate_early=v._terminate_early,
                 ).optional()
 
             # if isinstance(v, ZonArray):
@@ -1306,7 +1297,8 @@ class ZonRecord(Zon):
 
         return ZonRecord(
             {k: _partialify(v) for k, v in self.shape.items()},
-            terminate_early=self._terminate_early,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def required(
@@ -1325,7 +1317,8 @@ class ZonRecord(Zon):
                 )
                 for k, v in self.shape.items()
             },
-            terminate_early=self._terminate_early,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=self._catchall,
         )
 
     def passthrough(self) -> ZonRecord:
@@ -1342,7 +1335,6 @@ class ZonRecord(Zon):
             self.shape,
             unknown_key_policy=ZonRecord.UnknownKeyPolicy.PASSTHROUGH,
             catchall=self._catchall,
-            terminate_early=self._terminate_early,
         )
 
     def strict(self) -> ZonRecord:
@@ -1357,7 +1349,6 @@ class ZonRecord(Zon):
             self.shape,
             unknown_key_policy=ZonRecord.UnknownKeyPolicy.STRICT,
             catchall=self._catchall,
-            terminate_early=self._terminate_early,
         )
 
     def strip(self) -> ZonRecord:
@@ -1374,7 +1365,6 @@ class ZonRecord(Zon):
             self.shape,
             unknown_key_policy=ZonRecord.UnknownKeyPolicy.STRIP,
             catchall=self._catchall,
-            terminate_early=self._terminate_early,
         )
 
     def catchall(self, catchall_validator: Zon) -> ZonRecord:
@@ -1389,5 +1379,59 @@ class ZonRecord(Zon):
             self.shape,
             unknown_key_policy=self.unknown_key_policy,
             catchall=catchall_validator,
-            terminate_early=self._terminate_early,
         )
+
+def element_list(element: Zon, /) -> ZonList:
+    """
+    Returns a validator for an array with the given element type.
+
+    Args:
+        element (Zon): the element type of the array.
+
+    Returns:
+        ZonArray: a new `ZonArray` validator
+    """
+
+    return ZonList(element)
+
+class ZonList(ZonContainer):
+    """A Zon that validates that the input is a list with the given element type"""
+
+    def __init__(self, element, **kwargs):
+        super().__init__(**kwargs)
+
+        self._element = element
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        if not isinstance(data, list):
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
+            return
+            
+        for element in data:
+            (valid, data_or_error) = self._element.safe_validate(element)
+
+            if not valid:
+                ctx.add_issues(data_or_error.issues)
+
+    @property
+    def element(self):
+        return self._element
+    
+    def nonempty(self):
+        """
+        Returns a validator for a list with at least one element.
+
+        Returns:
+            ZonList: a new `ZonList` validator
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "nonempty",
+                lambda data: hasattr(data, "__len__") and len(data) > 0,
+            )
+        )
+
+        return _clone
