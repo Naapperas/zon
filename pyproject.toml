@@ -32,6 +32,7 @@ dev = [
   "pylint",
   "pytest",
   "pylint-pytest",
+  "pytest-cov",
 ]
 
 [project.urls]
@@ -40,3 +41,6 @@ Issues = "https://github.com/Naapperas/zon/issues"
 
 [tool.setuptools]
 packages = ["zon"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=zon --cov-report lcov"
