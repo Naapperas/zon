@@ -236,3 +236,71 @@ def test_record_deep_partial(validator):
     assert _validator.validate({"sub": {}})
 
     assert _validator.validate({})
+
+
+def test_record_required_all(validator):
+    _validator = validator.partial().required()
+
+    assert _validator.validate(
+        {
+            "name": "John",
+            "age": 1,
+        }
+    )
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(
+            {
+                "age": 1,
+            }
+        )
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(
+            {
+                "name": "",
+            }
+        )
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate({})
+
+
+def test_record_required_some(validator):
+    _validator = validator.partial().required({"age": True})
+
+    assert _validator.validate(
+        {
+            "name": "John",
+            "age": 1,
+        }
+    )
+
+    assert _validator.validate(
+        {
+            "age": 1,
+        }
+    )
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(
+            {
+                "name": "",
+            }
+        )
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate({})
+
+
+def test_record_unknown_key_policy_strict(validator):
+    _validator = validator.strict()
+
+    with pytest.raises(zon.error.ZonError):
+        _validator.validate(
+            {
+                "name": "John",
+                "age": 1,
+                "unknown": 1,
+            }
+        )

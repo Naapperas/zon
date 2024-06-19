@@ -24,6 +24,7 @@ from collections.abc import Callable, Mapping, Sequence  # TODO: explore Contain
 from dataclasses import dataclass, field
 import re
 import math
+from enum import Enum, auto
 
 import validators
 
@@ -1109,9 +1110,23 @@ def record(properties: dict[str, Zon], /, *, fast_termination=False) -> ZonRecor
 class ZonRecord(Zon):
     """A Zon that validates that the data is a record with the provided shape."""
 
-    def __init__(self, shape: Mapping[str, Zon], **kwargs):
+    class UnknownKeyPolicy(Enum):
+        STRIP = auto()
+        PASSTHROUGH = auto()
+        STRICT = auto()
+
+    def __init__(
+        self,
+        shape: Mapping[str, Zon],
+        /,
+        unknown_key_policy: UnknownKeyPolicy = UnknownKeyPolicy.STRIP,
+        catchall: Zon | None = None,
+        **kwargs,
+    ):
         super().__init__(**kwargs)
         self._shape = shape
+        self.unknown_key_policy = unknown_key_policy
+        self._catchall = catchall
 
     def _default_validate(self, data, ctx: ValidationContext):
 
@@ -1120,6 +1135,13 @@ class ZonRecord(Zon):
 
             if self._terminate_early:
                 return
+
+        extra_keys: set[str] = {}
+        if (
+            self._catchall is not None
+            or self.unknown_key_policy is not ZonRecord.UnknownKeyPolicy.STRIP
+        ):
+            extra_keys = set(data.keys()) - set(self._shape.keys())
 
         for key, zon in self._shape.items():
             # TODO: need to verify path
@@ -1135,6 +1157,39 @@ class ZonRecord(Zon):
 
                 if self._terminate_early:
                     return
+
+        if self._catchall is None:
+            match self.unknown_key_policy:
+                case ZonRecord.UnknownKeyPolicy.STRIP:
+                    # ignore extra keys
+                    pass
+                case ZonRecord.UnknownKeyPolicy.PASSTHROUGH:
+                    # TODO: rework validation to return data
+
+                    # data_to_return.extend({k: data[k] for k in extra_keys})
+
+                    pass
+                case ZonRecord.UnknownKeyPolicy.STRICT:
+                    if len(extra_keys) > 0:
+                        ctx.add_issue(
+                            ZonIssue(
+                                value=extra_keys,
+                                message=f"Unexpected keys: {extra_keys}",
+                                path=[],
+                            )
+                        )
+
+        else:
+            for key in extra_keys:
+                value = data.get(key)
+
+                (valid, data_or_error) = self._catchall.safe_validate(value)
+
+                if not valid:
+                    ctx.add_issues(data_or_error.issues)
+
+                    if self._terminate_early:
+                        return
 
     @property
     def shape(self) -> Mapping[str, Zon]:
@@ -1258,8 +1313,8 @@ class ZonRecord(Zon):
         self, /, required_properties: Mapping[str, Literal[True]] | None = None
     ) -> ZonRecord:
 
-        if not optional_properties:
-            optional_properties = {k: True for k in self.shape.keys()}
+        if not required_properties:
+            required_properties = {k: True for k in self.shape.keys()}
 
         return ZonRecord(
             {
@@ -1273,4 +1328,66 @@ class ZonRecord(Zon):
             terminate_early=self._terminate_early,
         )
 
-    
+    def passthrough(self) -> ZonRecord:
+        """
+        Returns a validator for the same record shape that adds unknown keys to the returned.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        # TODO: tests
+
+        return ZonRecord(
+            self.shape,
+            unknown_key_policy=ZonRecord.UnknownKeyPolicy.PASSTHROUGH,
+            catchall=self._catchall,
+            terminate_early=self._terminate_early,
+        )
+
+    def strict(self) -> ZonRecord:
+        """
+        Returns a validator for the same record shape but that fails validation if the data under validation does not match this validator's shape exactly.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new shape
+        """
+
+        return ZonRecord(
+            self.shape,
+            unknown_key_policy=ZonRecord.UnknownKeyPolicy.STRICT,
+            catchall=self._catchall,
+            terminate_early=self._terminate_early,
+        )
+
+    def strip(self) -> ZonRecord:
+        """
+        Returns a validator for the same record shape that unknown keys from the returned data.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new policy
+        """
+
+        # TODO: tests
+
+        return ZonRecord(
+            self.shape,
+            unknown_key_policy=ZonRecord.UnknownKeyPolicy.STRIP,
+            catchall=self._catchall,
+            terminate_early=self._terminate_early,
+        )
+
+    def catchall(self, catchall_validator: Zon) -> ZonRecord:
+        """
+        Returns a validator for the same record shape that pipes unknown keys and their values through a general, "catch-all" validator.
+
+        Returns:
+            ZonRecord: a new `ZonRecord` with the new catchall validator
+        """
+
+        return ZonRecord(
+            self.shape,
+            unknown_key_policy=self.unknown_key_policy,
+            catchall=catchall_validator,
+            terminate_early=self._terminate_early,
+        )
