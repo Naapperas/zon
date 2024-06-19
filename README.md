@@ -1,5 +1,7 @@
 # zon - Zod-like validator library for Python
 
+[![Coverage Status](https://coveralls.io/repos/github/Naapperas/zon/badge.svg?branch=refactor/refactor-api)](https://coveralls.io/github/Naapperas/zon?branch=refactor/refactor-api)
+
 Want to have the validation power of [zod](https://zod.dev/) but with the ease-of-use of Python?
 
 Enter `zon`.
@@ -157,6 +159,8 @@ To run the tests, simply run:
 ```bash 
 pytest test
 ```
+
+Coverage can be found on [Coveralls](https://coveralls.io/github/Naapperas/zon).
 
 ## Contributing
 
