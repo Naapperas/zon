@@ -1490,6 +1490,19 @@ class ZonUnion(Zon):
             ctx.add_issues(issues)
             ctx.add_issue(ZonIssue(value=data, message="Not a valid union", path=[]))
 
+def element_tuple(items: Sequence[Zon], /) -> ZonTuple:
+    """
+    Returns a validator for a tuple with the given element types.
+
+    Args:
+        items (Sequence[Zon]): the element types of the tuple.
+
+    Returns:
+        ZonTuple: a new `ZonTuple` validator
+    """
+
+    return ZonTuple(items)
+
 class ZonTuple(Zon):
     """A Zon that validates that the input is a tuple whose elements might have different types"""
 

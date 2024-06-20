@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `ValidationContext` class to keep track of current validation path and errors up until a certain point.
 - Added `examples` folder
 - Added explanation regarding `ZonString.datetime()` decisions.
-- Added `ZonLiteral` and `ZonEnum` classes
+- Added `ZonLiteral`, `ZonTuple` and `ZonEnum` classes
 - Added more `ZonRecord` methods
 - Added coverage
 
