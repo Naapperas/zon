@@ -131,7 +131,7 @@ class ValidationRule:
                 )
 
             return new_data
-        except validators.ValidationError as e:
+        except Exception as e:
             ctx.add_issue(
                 ZonIssue(
                     value=data,
@@ -293,6 +293,30 @@ class Zon(ABC):
 
         return element_list(self)
 
+    def refine(
+        self, refinement: Callable[[T], bool], /, message: str | None = None
+    ) -> Self:
+        """Returns a validator that validates that the data is valid under this validator and that it is valid under the provided refinement function.
+
+        Args:
+            refinement (Callable[[T], tuple[T, bool]]): the refinement function
+            message (str | None): custom message to be used in the error.
+
+        Returns:
+            Zon: The refined data validator.
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                message if message is not None else "custom",
+                lambda data: (data, refinement(data)),
+            )
+        )
+
+        return _clone
+
 
 def intersection(zon1: Zon, zon2: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for both validators supplied.
@@ -330,6 +354,7 @@ class ZonIntersection(Zon):
             return data
 
         return data
+
 
 def optional(zon: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for this validator if it exists.
@@ -677,6 +702,15 @@ class ZonString(ZonContainer):
 
     def ip(self, opts: Mapping[str, Any] | None = None) -> Self:
         """Assert that the value under validation is a valid IP address.
+
+        By default this checks if the IP is either a valid IPv4 or IPv6 address.
+        Clients can constrain this behavior by specifying the version in the `opts` parameter, like so:
+        ```py
+        zon.string().ip({"version": "v4"})
+        ```
+
+        Args:
+            opts (Mapping[str, Any]): the options to use. Defaults to None
 
         Returns:
             ZonString: a new `Zon` with the validation rule added
@@ -1220,7 +1254,7 @@ class ZonRecord(Zon):
 
             if not validated:
                 ctx.add_issues(data_or_error.issues)
-            elif data_or_error is not None: # in case of optional data
+            elif data_or_error is not None:  # in case of optional data
                 data_to_return[key] = data_or_error
 
         if self._catchall is None:
@@ -1248,7 +1282,7 @@ class ZonRecord(Zon):
 
                 if not valid:
                     ctx.add_issues(data_or_error.issues)
-                elif data_or_error is not None: # in case of optional data
+                elif data_or_error is not None:  # in case of optional data
                     data_to_return[key] = data_or_error
 
         return data_to_return

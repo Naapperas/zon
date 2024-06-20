@@ -305,6 +305,7 @@ def test_record_unknown_key_policy_strict(validator):
             }
         )
 
+
 def test_record_unknown_key_policy_strip(validator):
     _validator = validator.strip()
 
@@ -318,6 +319,7 @@ def test_record_unknown_key_policy_strip(validator):
         "name": "John",
         "age": 1,
     }
+
 
 def test_record_unknown_key_policy_passthrough(validator):
     _validator = validator.passthrough()
