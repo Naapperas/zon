@@ -35,7 +35,8 @@ from .traits import HasMax, HasMin
 
 __all__ = [
     "Zon",
-    # "ZonArray",
+    "element_list",
+    "ZonList",
     "ZonBoolean",
     "boolean",
     # "ZonDate",
@@ -55,7 +56,8 @@ __all__ = [
     "enum",
     "ZonLiteral",
     "literal",
-    # "ZonUnion",
+    "ZonUnion",
+    "union",
 ]
 
 
@@ -277,6 +279,15 @@ class Zon(ABC):
 
         return intersection(self, other)
 
+    def or_else(self, other: Sequence[Zon]) -> ZonUnion:
+        """Returns a validator that validates that the data is valid for at least one of the supplied validators.
+
+        Args:
+            other (Sequence(Zon))
+        """
+
+        return union([self, *other])
+
     def optional(self) -> ZonOptional:
         """Returns a validator that validates that the data is valid for this validator if it exists.
 
@@ -294,6 +305,7 @@ class Zon(ABC):
         """
 
         return element_list(self)
+
 
 def intersection(zon1: Zon, zon2: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for both validators supplied.
@@ -1147,7 +1159,6 @@ class ZonRecord(Zon):
             if not validated:
                 ctx.add_issues(data_or_error.issues)
 
-
         if self._catchall is None:
             match self.unknown_key_policy:
                 case ZonRecord.UnknownKeyPolicy.STRIP:
@@ -1381,6 +1392,7 @@ class ZonRecord(Zon):
             catchall=catchall_validator,
         )
 
+
 def element_list(element: Zon, /) -> ZonList:
     """
     Returns a validator for an array with the given element type.
@@ -1394,6 +1406,7 @@ def element_list(element: Zon, /) -> ZonList:
 
     return ZonList(element)
 
+
 class ZonList(ZonContainer):
     """A Zon that validates that the input is a list with the given element type"""
 
@@ -1406,7 +1419,7 @@ class ZonList(ZonContainer):
         if not isinstance(data, list):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
             return
-            
+
         for element in data:
             (valid, data_or_error) = self._element.safe_validate(element)
 
@@ -1416,7 +1429,7 @@ class ZonList(ZonContainer):
     @property
     def element(self):
         return self._element
-    
+
     def nonempty(self):
         """
         Returns a validator for a list with at least one element.
@@ -1435,3 +1448,98 @@ class ZonList(ZonContainer):
         )
 
         return _clone
+
+
+def union(options: Sequence[Zon], /) -> ZonUnion:
+    """
+    Returns a validator for a union of the given types.
+
+    Args:
+        options (Sequence[Zon]): the types to validate against.
+
+    Returns:
+        ZonUnion: a new `ZonUnion` validator
+    """
+
+    return ZonUnion(options)
+
+
+class ZonUnion(Zon):
+    """A Zon that validates that the input is one of the given types"""
+
+    def __init__(self, options: Sequence[Zon], /, **kwargs):
+        super().__init__(**kwargs)
+        self._options = options
+
+    @property
+    def options(self) -> Sequence[Zon]:
+        return self._options
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+
+        issues = []
+        for option in self._options:
+            (valid, data_or_error) = option.safe_validate(data)
+
+            if valid:
+                return
+
+            issues.extend(data_or_error.issues)
+
+        if len(issues) > 0:
+            ctx.add_issues(issues)
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid union", path=[]))
+
+class ZonTuple(Zon):
+    """A Zon that validates that the input is a tuple whose elements might have different types"""
+
+    def __init__(self, items: Sequence[Zon], rest: Zon | None = None, /, **kwargs):
+        super().__init__(**kwargs)
+        self._items = items
+        self._rest = rest
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        if not isinstance(data, tuple):
+            ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
+            return
+        
+        if len(data) < len(self._items):
+            ctx.add_issue(ZonIssue(value=data, message="Not enough elements", path=[]))
+            return
+        
+        if self._rest is None and len(data) > len(self._items):
+            ctx.add_issue(ZonIssue(value=data, message="Too many elements", path=[]))
+            return
+
+        for i, _validator in enumerate(self._items):
+            if _validator is None:
+                continue
+
+            (valid, data_or_error) = _validator.safe_validate(data[i])
+
+            if not valid:
+                ctx.add_issues(data_or_error.issues)
+
+        if self._rest is not None:
+            for extra_value in data[len(self.items):]:
+                (valid, data_or_error) = self._rest.safe_validate(extra_value)
+
+                if not valid:
+                    ctx.add_issues(data_or_error.issues)
+
+    @property
+    def items(self):
+        return self._items
+    
+    def rest(self, rest: Zon) -> ZonTuple:
+        """
+        Returns a validator for a tuple that might accept more elements of a given type
+
+        Args:
+            rest (Zon): the element type of the rest of the tuple's elements.
+        
+        Returns:
+            ZonTuple: a new `ZonTuple` validator
+        """
+
+        return ZonTuple(self._items, rest)
