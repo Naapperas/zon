@@ -192,7 +192,7 @@ def test_record_partial_all(validator):
         }
     )
 
-    assert _validator.validate({})
+    assert _validator.validate({}) == {}
 
 
 def test_record_partial_some(validator):
@@ -235,7 +235,7 @@ def test_record_deep_partial(validator):
     assert _validator.validate({"sub": {"sub_number": 1}})
     assert _validator.validate({"sub": {}})
 
-    assert _validator.validate({})
+    assert _validator.validate({}) == {}
 
 
 def test_record_required_all(validator):

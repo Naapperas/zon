@@ -18,7 +18,7 @@ class TestOptionalMethod:
         return base_validator.optional()
 
     def test_optional_validate(self, validator):
-        assert validator.validate(None)
+        assert validator.validate(None) is None
         assert validator.validate("abc")
 
         with pytest.raises(zon.error.ZonError):
@@ -38,7 +38,7 @@ class TestOptionalOuterFunction:
         return zon.optional(base_validator)
 
     def test_optional_validate(self, validator):
-        assert validator.validate(None)
+        assert validator.validate(None) is None
         assert validator.validate("abc")
 
         with pytest.raises(zon.error.ZonError):

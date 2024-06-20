@@ -67,13 +67,13 @@ def test_str_email(validator):
     assert _validator.validate("test@host.com")
 
     with pytest.raises(zon.error.ZonError):
-        assert _validator.validate("test@host")
+        _validator.validate("test@host")
 
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("@host.com")
+        _validator.validate("@host.com")
 
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("host.com")
+        _validator.validate("host.com")
 
 
 def test_str_url(validator):
@@ -83,13 +83,18 @@ def test_str_url(validator):
     assert _validator.validate("http://www.google.com")
 
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("www.google.com")
+        _validator.validate("www.google.com")
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("google.com")
+        _validator.validate("google.com")
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("google.com/")
+        _validator.validate("google.com/")
     with pytest.raises(zon.error.ZonError):
-        assert not _validator.validate("google.com")
+        _validator.validate("google.com")
+
+
+def test_str_emoji(validator):
+    with pytest.raises(NotImplementedError):
+        _validator = validator.emoji()
 
 
 """

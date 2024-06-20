@@ -110,7 +110,7 @@ def test_number_positive(validator):
 def test_number_non_negative(validator):
     _validator = validator.non_negative()
 
-    assert _validator.validate(0)
+    assert _validator.validate(0) == 0
     assert _validator.validate(1)
     assert _validator.validate(1.5)
 
@@ -134,7 +134,7 @@ def test_number_negative(validator):
 def test_number_non_positive(validator):
     _validator = validator.non_positive()
 
-    assert _validator.validate(0)
+    assert _validator.validate(0) == 0
     assert _validator.validate(-1)
     assert _validator.validate(-1.5)
 

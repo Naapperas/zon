@@ -10,7 +10,7 @@ def validator():
 
 def test_boolean_validate(validator):
     assert validator.validate(True)
-    assert validator.validate(False)
+    assert not validator.validate(False)
 
     with pytest.raises(zon.error.ZonError):
         validator.validate("1")

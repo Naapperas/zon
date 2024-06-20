@@ -65,33 +65,26 @@ __all__ = [
 class ValidationContext:
     """Context used throughout an entire validation run"""
 
-    _error: ZonError = None
+    error: ZonError = None
     path: list[str] = field(default_factory=list)
 
     def _ensure_error(self):
-        if self._error is None:
-            self._error = ZonError()
+        if self.error is None:
+            self.error = ZonError()
 
     def add_issue(self, issue: ZonIssue):
         """Adds the given `ZodIssue` to this context's `ZonError`"""
         self._ensure_error()
-        self._error.add_issue(issue)
+        self.error.add_issue(issue)
 
     def add_issues(self, issues: list[ZonIssue]):
         """Adds the given `ZodIssue`s to this context's `ZonError`"""
         self._ensure_error()
-        self._error.add_issues(issues)
-
-    def raise_error(self) -> Never:
-        """
-        Raises the current validation error in this context if it exists.
-        """
-
-        raise self._error
+        self.error.add_issues(issues)
 
     @property
     def dirty(self):
-        return self._error is not None and len(self._error.issues) >= 0
+        return self.error is not None and len(self.error.issues) >= 0
 
 
 T = TypeVar("T")
@@ -105,7 +98,7 @@ class ValidationRule:
     def __init__(
         self,
         name: str,
-        fn: Callable[[T], bool],
+        fn: Callable[[T], tuple[T, bool]],
         *,
         additional_data: Mapping[str, Any] = None,
     ):
@@ -113,21 +106,20 @@ class ValidationRule:
         self.name = name
         self.additional_data = additional_data if additional_data is not None else {}
 
-    def check(self, data: Any, ctx: ValidationContext) -> bool:
+    def check(self, data: T, ctx: ValidationContext) -> T:
         """
         Check this validation rule against the supplied data.
 
         Args:
-            data (Any): the piece of data to be validated.
+            data (T): the piece of data to be validated.
             ctx (ValidationContext): the context in which the validation is being run.
 
         Returns:
-            bool: True if the data is valid, False otherwise.
+            T: The original data
         """
 
-        valid = False
         try:
-            valid = self.fn(data)
+            new_data, valid = self.fn(data)
 
             if not valid:
                 ctx.add_issue(
@@ -137,6 +129,8 @@ class ValidationRule:
                         path=[],
                     )
                 )
+
+            return new_data
         except validators.ValidationError as e:
             ctx.add_issue(
                 ZonIssue(
@@ -145,9 +139,8 @@ class ValidationRule:
                     path=[],
                 )
             )
-            valid = False
 
-        return valid
+            return data
 
 
 @update_abstractmethods
@@ -160,7 +153,7 @@ class Zon(ABC):
     to create more complex validations.
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self):
         self.validators: list[ValidationRule] = []
         """validators that will run when 'validate' is invoked."""
 
@@ -204,23 +197,17 @@ class Zon(ABC):
 
         ctx = ValidationContext()
 
-        def raise_if_dirty():
-            if ctx.dirty:
-                ctx.raise_error()
+        cloned_data = copy.deepcopy(data)
 
         try:
-            self._default_validate(data, ctx)
+            self._default_validate(cloned_data, ctx)
         except NotImplementedError as ni:
             raise ni
 
-        raise_if_dirty()
-
         for validator in self.validators:
-            validator.check(data, ctx)
+            cloned_data = validator.check(cloned_data, ctx)
 
-        raise_if_dirty()
-
-        return True
+        return (not ctx.dirty, cloned_data if not ctx.dirty else ctx.error)
 
     @final
     def validate(self, data: T) -> bool:
@@ -234,12 +221,13 @@ class Zon(ABC):
             is not implemented on base Zon class.
             ZonError: if validation fails.
         """
-        if type(self) is Zon:  # pylint: disable=unidiomatic-typecheck
-            raise NotImplementedError(
-                "validate() method not implemented on base Zon class"
-            )
 
-        return self._validate(data)
+        valid, data_or_error = self.safe_validate(data)
+
+        if valid:
+            return data_or_error
+
+        raise data_or_error
 
     @final
     def safe_validate(
@@ -259,11 +247,7 @@ class Zon(ABC):
         """
 
         try:
-            self.validate(data)
-
-            return (True, data)
-        except ZonError as ze:
-            return (False, ze)
+            return self._validate(data)
         except Exception as e:
             raise e
 
@@ -397,7 +381,10 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "max_length",
-                lambda data: hasattr(data, "__len__") and len(data) <= max_value,
+                lambda data: (
+                    data,
+                    hasattr(data, "__len__") and len(data) <= max_value,
+                ),
             )
         )
 
@@ -415,7 +402,10 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "min_length",
-                lambda data: hasattr(data, "__len__") and len(data) >= min_value,
+                lambda data: (
+                    data,
+                    hasattr(data, "__len__") and len(data) >= min_value,
+                ),
             )
         )
 
@@ -433,7 +423,7 @@ class ZonContainer(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "equal_length",
-                lambda data: hasattr(data, "__len__") and len(data) == length,
+                lambda data: (data, hasattr(data, "__len__") and len(data) == length),
             )
         )
 
@@ -473,7 +463,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "email",
-                validators.email,
+                lambda data: (data, validators.email(data)),
             )
         )
 
@@ -492,7 +482,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "url",
-                validators.url,
+                lambda data: (data, validators.url(data)),
             )
         )
 
@@ -533,7 +523,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "uuid",
-                validators.uuid,
+                lambda data: (data, validators.uuid(data)),
             )
         )
 
@@ -556,7 +546,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "regex",
-                lambda data: re.match(regex, data) is not None,
+                lambda data: (data, re.match(regex, data) is not None),
             )
         )
 
@@ -577,7 +567,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "includes",
-                lambda data: needle in data,
+                lambda data: (data, needle in data),
             )
         )
 
@@ -598,7 +588,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "starts_with",
-                lambda data: data.startswith(prefix),
+                lambda data: (data, data.startswith(prefix)),
             )
         )
 
@@ -619,7 +609,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "ends_with",
-                lambda data: data.endswith(suffix),
+                lambda data: (data, data.endswith(suffix)),
             )
         )
 
@@ -671,7 +661,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "datetime",
-                lambda data: _datetime_regex(opts).match(data) is not None,
+                lambda data: (data, _datetime_regex(opts).match(data) is not None),
             )
         )
 
@@ -712,7 +702,7 @@ class ZonString(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "ip",
-                lambda data: _validator(data, opts),
+                lambda data: (data, _validator(data, opts)),
             )
         )
 
@@ -751,7 +741,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "gt",
-                lambda data: data is not None and data > min_ex,
+                lambda data: (data, data is not None and data > min_ex),
             )
         )
 
@@ -772,7 +762,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "gte",
-                lambda data: data is not None and data >= min_in,
+                lambda data: (data, data is not None and data >= min_in),
             )
         )
 
@@ -796,7 +786,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "lt",
-                lambda data: data is not None and data < max_ex,
+                lambda data: (data, data is not None and data < max_ex),
             )
         )
 
@@ -817,7 +807,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "lte",
-                lambda data: data is not None and data <= max_in,
+                lambda data: (data, data is not None and data <= max_in),
             )
         )
 
@@ -838,7 +828,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "int",
-                lambda data: isinstance(data, int),
+                lambda data: (data, isinstance(data, int)),
             )
         )
 
@@ -856,7 +846,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "float",
-                lambda data: isinstance(data, float),
+                lambda data: (data, isinstance(data, float)),
             )
         )
 
@@ -874,7 +864,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "positive",
-                lambda data: data is not None and data > 0,
+                lambda data: (data, data is not None and data > 0),
             )
         )
 
@@ -892,7 +882,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "negative",
-                lambda data: data is not None and data < 0,
+                lambda data: (data, data is not None and data < 0),
             )
         )
 
@@ -910,7 +900,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "non_negative",
-                lambda data: data is not None and data >= 0,
+                lambda data: (data, data is not None and data >= 0),
             )
         )
 
@@ -928,7 +918,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "non_positive",
-                lambda data: data is not None and data <= 0,
+                lambda data: (data, data is not None and data <= 0),
             )
         )
 
@@ -949,7 +939,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "multiple_of",
-                lambda data: data is not None and data % base == 0,
+                lambda data: (data, data is not None and data % base == 0),
             )
         )
 
@@ -970,7 +960,7 @@ class ZonNumber(Zon, HasMax, HasMin):
         _clone.validators.append(
             ValidationRule(
                 "finite",
-                lambda data: data is not None and not math.isinf(data),
+                lambda data: (data, data is not None and not math.isinf(data)),
             )
         )
 
@@ -1443,7 +1433,7 @@ class ZonList(ZonContainer):
         _clone.validators.append(
             ValidationRule(
                 "nonempty",
-                lambda data: hasattr(data, "__len__") and len(data) > 0,
+                lambda data: (data, hasattr(data, "__len__") and len(data) > 0),
             )
         )
 
@@ -1490,6 +1480,7 @@ class ZonUnion(Zon):
             ctx.add_issues(issues)
             ctx.add_issue(ZonIssue(value=data, message="Not a valid union", path=[]))
 
+
 def element_tuple(items: Sequence[Zon], /) -> ZonTuple:
     """
     Returns a validator for a tuple with the given element types.
@@ -1503,6 +1494,7 @@ def element_tuple(items: Sequence[Zon], /) -> ZonTuple:
 
     return ZonTuple(items)
 
+
 class ZonTuple(Zon):
     """A Zon that validates that the input is a tuple whose elements might have different types"""
 
@@ -1515,11 +1507,11 @@ class ZonTuple(Zon):
         if not isinstance(data, tuple):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
             return
-        
+
         if len(data) < len(self._items):
             ctx.add_issue(ZonIssue(value=data, message="Not enough elements", path=[]))
             return
-        
+
         if self._rest is None and len(data) > len(self._items):
             ctx.add_issue(ZonIssue(value=data, message="Too many elements", path=[]))
             return
@@ -1534,7 +1526,7 @@ class ZonTuple(Zon):
                 ctx.add_issues(data_or_error.issues)
 
         if self._rest is not None:
-            for extra_value in data[len(self.items):]:
+            for extra_value in data[len(self.items) :]:
                 (valid, data_or_error) = self._rest.safe_validate(extra_value)
 
                 if not valid:
@@ -1543,14 +1535,14 @@ class ZonTuple(Zon):
     @property
     def items(self):
         return self._items
-    
+
     def rest(self, rest: Zon) -> ZonTuple:
         """
         Returns a validator for a tuple that might accept more elements of a given type
 
         Args:
             rest (Zon): the element type of the rest of the tuple's elements.
-        
+
         Returns:
             ZonTuple: a new `ZonTuple` validator
         """

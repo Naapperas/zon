@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Moved everything into a single file to combat circular reference issues
 - Deprecated `ValidationError` in favor of `ZonError`.
 - Simplified validation logic
+- Now returns a (deep-) copy of the original data after validation. This is more useful for `ZonRecord` and `ZonString` validators that can transform, while transformers are not added.
 
 ### Removed
 - Removed `between`, `__eq__` and `equals` methods from `ZonNumber`.
