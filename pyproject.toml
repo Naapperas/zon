@@ -4,8 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "zon"
-version = "1.1.0"
+version = "2.0.0"
 authors = [
+  { name="Nuno Pereira", email="nunoafonso2002@gmail.com" },
+]
+maintainers = [
   { name="Nuno Pereira", email="nunoafonso2002@gmail.com" },
 ]
 description = "A Zod-like validation library for Python"
@@ -16,6 +19,21 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+  "validators>0.28",
+  "typing_extensions>4.12",
+  "uuid==1.30"
+]
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "build",
+  "pylint",
+  "pytest",
+  "pylint-pytest",
+  "pytest-cov",
+]
 
 [project.urls]
 Homepage = "https://github.com/Naapperas/zon"
@@ -23,3 +41,6 @@ Issues = "https://github.com/Naapperas/zon/issues"
 
 [tool.setuptools]
 packages = ["zon"]
+
+[tool.pytest.ini_options]
+addopts = "--cov=zon --cov-report lcov"
