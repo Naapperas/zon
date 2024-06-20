@@ -304,3 +304,32 @@ def test_record_unknown_key_policy_strict(validator):
                 "unknown": 1,
             }
         )
+
+def test_record_unknown_key_policy_strip(validator):
+    _validator = validator.strip()
+
+    assert _validator.validate(
+        {
+            "name": "John",
+            "age": 1,
+            "unknown": 1,
+        }
+    ) == {
+        "name": "John",
+        "age": 1,
+    }
+
+def test_record_unknown_key_policy_passthrough(validator):
+    _validator = validator.passthrough()
+
+    assert _validator.validate(
+        {
+            "name": "John",
+            "age": 1,
+            "unknown": 1,
+        }
+    ) == {
+        "name": "John",
+        "age": 1,
+        "unknown": 1,
+    }

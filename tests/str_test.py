@@ -98,7 +98,6 @@ def test_str_emoji(validator):
 
 
 """
-def test_str_emoji(validator):
     _validator = validator.emoji()
 
     assert _validator.validate("😀")
@@ -253,3 +252,21 @@ def test_str_ip_v6(validator):
 
     with pytest.raises(zon.error.ZonError):
         _validator.validate("255.255.255.255")
+
+
+def test_str_trim(validator):
+    _validator = validator.trim()
+
+    assert _validator.validate(" abc ") == "abc"
+
+
+def test_str_to_lower_case(validator):
+    _validator = validator.to_lower_case()
+
+    assert _validator.validate("AbC") == "abc"
+
+
+def test_str_to_upper_case(validator):
+    _validator = validator.to_upper_case()
+
+    assert _validator.validate("aBc") == "ABC"

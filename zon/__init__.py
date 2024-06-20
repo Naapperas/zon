@@ -17,11 +17,9 @@ __copyright__ = "Copyright 2023, Nuno Pereira"
 # - Container and other collections.abc types
 # - Typing with Self
 
-# TODO: remove early_termination (was giving errors in list validators)
-
 import copy
 from abc import ABC, abstractmethod, update_abstractmethods
-from typing import Any, Self, TypeVar, final, Literal, Never
+from typing import Any, Self, TypeVar, final, Literal
 from collections.abc import Callable, Mapping, Sequence  # TODO: explore Container type
 from dataclasses import dataclass, field
 import re
@@ -58,6 +56,8 @@ __all__ = [
     "literal",
     "ZonUnion",
     "union",
+    "ZonTuple",
+    "element_tuple",
 ]
 
 
@@ -200,9 +200,12 @@ class Zon(ABC):
         cloned_data = copy.deepcopy(data)
 
         try:
-            self._default_validate(cloned_data, ctx)
+            cloned_data = self._default_validate(cloned_data, ctx)
         except NotImplementedError as ni:
             raise ni
+
+        if ctx.dirty:
+            return (False, ctx.error)
 
         for validator in self.validators:
             cloned_data = validator.check(cloned_data, ctx)
@@ -318,14 +321,15 @@ class ZonIntersection(Zon):
 
         if not zon_1_parsed:
             ctx.add_issues(data1_or_error.issues)
-            return
+            return data
 
         (zon_2_parsed, data2_or_error) = self.zon2.safe_validate(data)
 
         if not zon_2_parsed:
             ctx.add_issues(data2_or_error.issues)
-            return
+            return data
 
+        return data
 
 def optional(zon: Zon) -> ZonIntersection:
     """Returns a validator that validates that the data is valid for this validator if it exists.
@@ -352,6 +356,8 @@ class ZonOptional(Zon):
 
             if not passed:
                 ctx.add_issues(data_or_error.issues)
+
+        return data
 
     def unwrap(self) -> Zon:
         """Extracts the wrapped Zon from this ZonOptional.
@@ -449,6 +455,8 @@ class ZonString(ZonContainer):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, str):
             ctx.add_issue(ZonIssue(value=data, message="Not a string", path=[]))
+
+        return data
 
     def email(self) -> Self:
         """
@@ -708,6 +716,60 @@ class ZonString(ZonContainer):
 
         return _clone
 
+    def trim(self) -> Self:
+        """Trim whitespace from both sides of the value.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "trim",
+                lambda data: (data.strip(), True),
+            )
+        )
+
+        return _clone
+
+    def to_lower_case(self) -> Self:
+        """Convert the value to lowercase.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "to_lower_case",
+                lambda data: (data.lower(), True),
+            )
+        )
+
+        return _clone
+
+    def to_upper_case(self) -> Self:
+        """Convert the value to uppercase.
+
+        Returns:
+            ZonString: a new `Zon` with the validation rule added
+        """
+
+        _clone = self._clone()
+
+        _clone.validators.append(
+            ValidationRule(
+                "to_upper_case",
+                lambda data: (data.upper(), True),
+            )
+        )
+
+        return _clone
+
 
 def number() -> ZonNumber:
     """Returns a validator for numeric data.
@@ -725,6 +787,8 @@ class ZonNumber(Zon, HasMax, HasMin):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, (int, float)):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid number", path=[]))
+
+        return data
 
     def gt(self, min_ex: float | int) -> Self:
         """Assert that the value under validation is greater than the given number.
@@ -984,6 +1048,8 @@ class ZonBoolean(Zon):
         if not isinstance(data, bool):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid boolean", path=[]))
 
+        return data
+
 
 def literal(value: Any, /) -> ZonLiteral:
     """Returns a validator for a given literal value.
@@ -1014,6 +1080,8 @@ class ZonLiteral(Zon):
             ctx.add_issue(
                 ZonIssue(value=data, message=f"Expected {self._value}", path=[])
             )
+
+        return data
 
 
 def enum(options: Sequence[str], /) -> ZonEnum:
@@ -1053,6 +1121,8 @@ class ZonEnum(Zon):
                     value=data, message=f"Expected one of {self._options}", path=[]
                 )
             )
+
+        return data
 
     def exclude(self, options: Sequence[str]) -> Self:
         """
@@ -1128,7 +1198,9 @@ class ZonRecord(Zon):
         if not isinstance(data, dict):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid object", path=[]))
 
-            return
+            return data
+
+        data_to_return = {}
 
         extra_keys: set[str] = {}
         if (
@@ -1148,6 +1220,8 @@ class ZonRecord(Zon):
 
             if not validated:
                 ctx.add_issues(data_or_error.issues)
+            elif data_or_error is not None: # in case of optional data
+                data_to_return[key] = data_or_error
 
         if self._catchall is None:
             match self.unknown_key_policy:
@@ -1155,11 +1229,7 @@ class ZonRecord(Zon):
                     # ignore extra keys
                     pass
                 case ZonRecord.UnknownKeyPolicy.PASSTHROUGH:
-                    # TODO: rework validation to return data
-
-                    # data_to_return.extend({k: data[k] for k in extra_keys})
-
-                    pass
+                    data_to_return.update({k: data[k] for k in extra_keys})
                 case ZonRecord.UnknownKeyPolicy.STRICT:
                     if len(extra_keys) > 0:
                         ctx.add_issue(
@@ -1178,6 +1248,10 @@ class ZonRecord(Zon):
 
                 if not valid:
                     ctx.add_issues(data_or_error.issues)
+                elif data_or_error is not None: # in case of optional data
+                    data_to_return[key] = data_or_error
+
+        return data_to_return
 
     @property
     def shape(self) -> Mapping[str, Zon]:
@@ -1408,13 +1482,15 @@ class ZonList(ZonContainer):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, list):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
-            return
+            return data
 
         for element in data:
             (valid, data_or_error) = self._element.safe_validate(element)
 
             if not valid:
                 ctx.add_issues(data_or_error.issues)
+
+        return data
 
     @property
     def element(self):
@@ -1472,13 +1548,15 @@ class ZonUnion(Zon):
             (valid, data_or_error) = option.safe_validate(data)
 
             if valid:
-                return
+                return data
 
             issues.extend(data_or_error.issues)
 
         if len(issues) > 0:
             ctx.add_issues(issues)
             ctx.add_issue(ZonIssue(value=data, message="Not a valid union", path=[]))
+
+        return data
 
 
 def element_tuple(items: Sequence[Zon], /) -> ZonTuple:
@@ -1506,15 +1584,15 @@ class ZonTuple(Zon):
     def _default_validate(self, data: T, ctx: ValidationContext):
         if not isinstance(data, tuple):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
-            return
+            return data
 
         if len(data) < len(self._items):
             ctx.add_issue(ZonIssue(value=data, message="Not enough elements", path=[]))
-            return
+            return data
 
         if self._rest is None and len(data) > len(self._items):
             ctx.add_issue(ZonIssue(value=data, message="Too many elements", path=[]))
-            return
+            return data
 
         for i, _validator in enumerate(self._items):
             if _validator is None:
@@ -1531,6 +1609,8 @@ class ZonTuple(Zon):
 
                 if not valid:
                     ctx.add_issues(data_or_error.issues)
+
+        return data
 
     @property
     def items(self):
