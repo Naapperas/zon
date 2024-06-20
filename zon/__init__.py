@@ -866,8 +866,8 @@ class ZonNumber(Zon, HasMax, HasMin):
 
         return _clone
 
-    def max(self, max_value: int | float) -> Self:
-        return self.gte(max_value)
+    def min(self, min_value: int | float) -> Self:
+        return self.gte(min_value)
 
     def lt(self, max_ex: float | int) -> Self:
         """Assert that the value under validation is less than the given number.
@@ -911,8 +911,8 @@ class ZonNumber(Zon, HasMax, HasMin):
 
         return _clone
 
-    def min(self, min_value: int | float) -> Self:
-        return self.lte(min_value)
+    def max(self, max_value: int | float) -> Self:
+        return self.lte(max_value)
 
     def int(self) -> Self:
         """Assert that the value under validation is an integer.
@@ -1400,7 +1400,7 @@ class ZonRecord(Zon):
                 ).optional()
 
             # if isinstance(v, ZonArray):
-            #     return ZonArray(_partialify(v.item_type))
+            #     return ZonArray(_partialify(v.item_type).unwrap()).optional()
 
             return v.optional()
 
@@ -1662,3 +1662,40 @@ class ZonTuple(Zon):
         """
 
         return ZonTuple(self._items, rest)
+
+
+def anything() -> ZonAnything:
+    """
+    Returns a validator for anything.
+
+    Returns:
+        ZonAnything: a new `ZonAnything` validator
+    """
+
+    return ZonAnything()
+
+
+class ZonAnything(Zon):
+    """A Zon that validates that the input is anything"""
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        return data
+
+
+def never() -> ZonNever:
+    """
+    Returns a validator for nothing.
+
+    Returns:
+        ZonNever: a new `ZonNever` validator
+    """
+
+    return ZonNever()
+
+
+class ZonNever(Zon):
+    """A Zon that validates no input."""
+
+    def _default_validate(self, data: T, ctx: ValidationContext):
+        ctx.add_issue(ZonIssue(value=data, message="No data allowed", path=[]))
+        return data

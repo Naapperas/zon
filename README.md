@@ -6,7 +6,7 @@ Want to have the validation power of [zod](https://zod.dev/) but with the ease-o
 
 Enter `zon`.
 
-`zon` is a Python library that aims to provide a simple, easy-to-use API for validating data, similiar to `zod`'s own API'. In fact, the whole library and its name were inspired by `zod`: **Z**od + Pyth**on** = **Zon** !!!.
+`zon` is a Python library that aims to provide a simple, easy-to-use API for validating data, similar to `zod`'s own API'. In fact, the whole library and its name were inspired by `zod`: **Z**od + Pyth**on** = **Zon** !!!.
 
 ## Why
 
@@ -39,7 +39,7 @@ pip install .
 In its essence, `zon` behaves much like `zod`. If you have used `zod`, you will feel right at home with `zon`.
 
 > [!NOTE]  
-> There are some differences in the public API between `zon` and `zod`. Those mostly stem from the fact that Python does not have type inference like Typescript has.
+> There are some differences in the public API between `zon` and `zod`. Those mostly stem from the fact that Python does not have type inference like Typescript has. There are other slight deviations between `zon` and `zod`. 
 
 ### Basic types
 
@@ -47,30 +47,44 @@ In its essence, `zon` behaves much like `zod`. If you have used `zod`, you will 
 
 ```python
 zon.string()
-zon.integer()
-zon.floating_point()
+zon.number()
 zon.boolean()
-zon.none()
+zon.literal()
+zon.enum()
+
+zon.record()
+zon.element_list()
+zon.element_tuple()
+
+zon.union()
+zon.intersection()
+zon.optional()
+
+zon.never()
 zon.anything()
 ```
 
-Besides this, there's also a `zon.optional()` type, which allows for a value to be either of the type passed as an argument or `None`.
+### Numbers
 
 ```python
-zon.optional(zon.string())
-```
-
-### Integers and Floats
-
-`zon`'z integer and floating point types derive from a common `ZonNumber` class that defines some methods that can be applied to all numbers:
-
-```python
-validator = zon.integer() # (for floats, use zon.floating_point())
+validator = zon.number()
 
 validator.gt(5)
-validator.gte(5)
+validator.gte(5) # alias for .min(5)
 validator.lt(5)
-validator.lte(5)
+validator.lte(5) # alias for .max(5)
+
+validator.int()
+validator.float()
+
+validator.positive()
+validator.negative()
+validator.non_negative()
+validator.non_positive()
+
+validator.multiple_of(5) # alias for .step(5)
+
+validator.finite()
 ```
 
 ### Strings
@@ -78,25 +92,53 @@ validator.lte(5)
 For strings, there are also some extra methods:
 
 ```python
-zon.string().min(5)
-zon.string().max(10)
-zon.string().length(5)
-zon.string().email()
-zon.string().regex(r"^\d{3}-\d{3}-\d{4}$")
-zon.string().uuid()
-zon.string().ip()
-zon.string().datetime()
+validator = zon.string()
+
+validator.min(5)
+validator.max(10)
+validator.length(5)
+
+validator.email()
+validator.url()
+validator.uuid()
+validator.regex(r"^\d{3}-\d{3}-\d{4}$")
+validator.includes("needle")
+validator.starts_with("prefix")
+validator.ends_with("suffix")
+validator.datetime()
+validator.ip()
+
+# transformers
+validator.trim()
+validator.to_lower_case()
+validator.to_upper_case()
 ```
 
 #### Datetime
 
-`zod` uses regex-based validation for datetimes, which must be valid [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) strings. However, due to an issue with most JavaScript engines' datetime validation, offsets cannot specify only hours, and `zod` reflects this in their API.
+`zon` accepts the same options as `zod` for datetime string validation:
+```python
+validator.datetime({"precision": 3})
+validator.datetime({"local": True})
+validator.datetime({"offset": True})
+```
 
-While `zon` could reflect `zod`'s API in this matter, it is best to not constrain users to the problems of another platform, making this one of the aspects where `zon` deviates from `zod`.
+> [!NOTE]
+> `zod` uses regex-based validation for datetimes, which must be valid [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) strings. However, due to an issue with most JavaScript engines' datetime validation, offsets cannot specify only hours, and `zod` reflects this in their API.
+> While `zon` could reflect `zod`'s API in this matter, it is best to not constrain users to the problems of another platform, making this one of the aspects where `zon` deviates from `zod`.
+
+#### IP addresses
+
+`zon` accepts the same options as `zod` for ip address string validation:
+```python
+validator.ip({"version": "v4"})
+validator.ip({"version": "v6"})
+```
+
 
 ### List
 
-Lists are defined by calling the `zon.list()` method, passing as an argument a `Zon` instance. All elements in this list must be of the same type.
+Lists are defined by calling the `zon.element_list()` method, passing as an argument a `Zon` instance. All elements in this list must be of the same type.
 
 ```python
 zon.element_list(zon.string())
@@ -112,24 +154,36 @@ validator.max(10)
 validator.length(5)
 ```
 
+There is also a method for validating that the list has at least one element, `nonempty`:
+```py
+validator.nonempty()
+```
+
+You can get the type of the list's elements by accessing the `element` property:
+```py
+zon.element_list(zon.string()).element is ZonString
+```
+
 ### Union
 
 `zon` supports unions of types, which are defined by calling the `zon.union()` method, passing as arguments the `Zon` instances that are part of the union.
 
 ```python
-zod.union([zon.string(), zon.integer()])
+zod.union([zon.string(), zon.number()])
+```
+
+To access the various options, access the `options` property:
+
+```python
+zod.union([zon.string(), zon.number()]).options = [ZonString, ZonNumber]
 ```
 
 ### Record
 
 `zon` supports validating objects according to a specified schema, using the `zon.schema()` method. This method takes as an argument a dictionary, where the keys are the keys of the object to be validated and the values are the `Zon` instances that define the type of each key.
 
-This method is probably the most useful in the library since it can be used to, for example, validate JSON data from a HTTP response, like such:
-
 ```python
-import zon
-
-schema = zon.record({
+validator = zon.record({
     "name": zon.string(),
     "age": zon.number(),
     "isAwesome": zon.boolean(),
@@ -142,9 +196,77 @@ schema = zon.record({
 })
 ```
 
+Useful methods for `ZonRecord` instances:
+```py
+validator.extend({...})
+validator.merge(otherZon) == validator.extend(otherZon.shape)
+validator.pick({"name": True}) == ZonRecord({"name": ...})
+validator.omit({"name": True}) == ZonRecord({"<key that is different from name>": ..., ...})
+validator.partial() # makes all attributes optional, shallowly
+validator.partial({"name": True}) # makes only "name" optional (in this example)
+validator.deepPartial() # makes all attributes optional, recursively
+validator.required() # makes all attributes required, shallowly
+```
+
+You can access the shape of objects validated by any `ZonRecord` instance by accessing the `shape` property:
+```py
+shape = validator.shape
+```
+
+If you want to validate only the keys of the shape, use the `keyof` method:
+```py
+validator.keyof() == ZonEnum(["name", "age", "isAwesome", "friends", "address"])
+```
+
+#### Unknown Keys
+
+As `zod`, `zon` normally strips unknown keys from records. This, however, can be configured:
+```py
+validator.strict() # presence of unknown keys makes validation fail
+validator.passthrough() # add unknown keys to the resulting record
+validator.strip() # the default behavior, strip unknown keys from the resulting record
+```
+
+#### Catchall
+
+In case you want to validate unknown keys, you can use the `catchall` method to specify the validator that is used:
+```py
+validator.catchall(zon.string()) # unknown keys *must* be associated with string values
+```
+
+### Tuple
+
+`zon` supports tuples out-of-the-box, which are fixed-size containers whose elements might not have the same type:
+```py
+validator = zon.tuple([...])
+```
+
+If you want to access the items of the tuples, use the `items` property:
+```py
+validator.items = [...]
+```
+
+Variadic items can be validated using the `rest` method:
+```py
+validator.rest(zon.string()) # after the defined items, everything must be a string
+```
+
+### Enums
+
+`zon` supports enumerations, which allow validating that any given data is one of many values:
+
+```py
+validator = zon.enum([...])
+```
+
+If you want to access the possible valid values, use the `enum` property:
+```py
+validator.enum = [...]
+```
+
 ## Examples
 
-Example usage of `zon` can be found in the `examples` directory.
+Example usage of `zon` can be found in the [`examples`](./examples/) directory.
 
 ## Documentation
 
