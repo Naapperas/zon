@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2024-07-16
+
 ### Changed
 - Fixed the return type of `validate`
 
@@ -55,6 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added base source code files for the project.
 - Base `README.md` file.
 
-[unreleased]: https://github.com/Naapperas/zon/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/Naapperas/zon/compare/v1.1.0...v1.1.0
+[unreleased]: https://github.com/Naapperas/zon/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/Naapperas/zon/compare/v2.0.0...v2.0.1
+[2.0.0]: https://github.com/Naapperas/zon/compare/v1.1.0...v2.0.0
+[1.1.0]: https://github.com/Naapperas/zon/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/Naapperas/zon/releases/tag/v1.0.0
