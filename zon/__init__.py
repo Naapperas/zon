@@ -162,12 +162,12 @@ class Zon(ABC):
         return copy.deepcopy(self)
 
     @abstractmethod
-    def _default_validate(self, data: T, ctx: ValidationContext):
+    def _default_validate(self, data: T, ctx: ValidationContext) -> T:
         """Default validation for any Zon validator
 
-        The contract for this method is the same for any other `ValidationRule`:
-        - If the validation succeeds, return True
-        - If the validation false, raise a ZonError containing the relevant data.
+        The contract for this method is the same for any other `ValidationRule`: If the validation fails, mark the context as dirty.
+
+        In any case, this method should return the original data
 
         The default implementation raises a NotImplementedError.
 
@@ -181,14 +181,15 @@ class Zon(ABC):
         )
 
     @final
-    def _validate(self, data: T) -> bool:
+    def _validate(self, data: T) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
         """Validates the supplied data.
 
         Args:
             data (Any): the piece of data to be validated.
 
         Returns:
-            bool: True if the data is valid. This method will never return false as that case raises an error, as documented.
+            (bool, T) | (bool, ZonError): A tuple containing a boolean indicating whether the data is valid,
+            and either the validated data or a ZonError object.
 
         Raises:
             ZonError: if validation against the supplied data fails.
@@ -213,11 +214,14 @@ class Zon(ABC):
         return (not ctx.dirty, cloned_data if not ctx.dirty else ctx.error)
 
     @final
-    def validate(self, data: T) -> bool:
+    def validate(self, data: T) -> T:
         """Validates the supplied data.
 
         Args:
             data (Any): the piece of data to be validated.
+
+        Returns:
+            T: the validated data.
 
         Raises:
             NotImplementedError: the default implementation of this method
@@ -242,6 +246,10 @@ class Zon(ABC):
 
         Args:
             data (Any): the piece of data to be validated.
+
+        Returns:
+            (bool, T) | (bool, ZonError): A tuple containing a boolean indicating whether the data is valid,
+            and either the validated data or a ZonError object.
 
         Raises:
             NotImplementedError: the default implementation of this method
@@ -1294,7 +1302,7 @@ class ZonRecord(Zon):
     def keyof(self) -> ZonEnum:
         """Returns a validator for the keys of an object"""
 
-        return enum(self._shape.keys())
+        return enum(self.shape.keys())
 
     def extend(self, extra_properties: Mapping[str, Zon]) -> Self:
         """
