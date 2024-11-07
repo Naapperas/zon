@@ -36,3 +36,8 @@ Pull requests should be used to propose changes to the codebase. When creating a
 - **All pull requests** should be tagged with the appropriate labels. If you are unsure about which labels to use, please use the `help wanted` label.
 - **All pull requests** should (but are not strictly required to) be accompanied by a description of the alternatives considered when making the changes in the pull request.
 
+All changes must be summarized in [CHANGELOG.md](CHANGELOG.md).
+
+Furthermore, new contributors can add themselves to the list of contributors, present at [CONTRIBUTORS](CONTRIBUTORS).
+
+
