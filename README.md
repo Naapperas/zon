@@ -41,6 +41,23 @@ In its essence, `zon` behaves much like `zod`. If you have used `zod`, you will 
 > [!NOTE]  
 > There are some differences in the public API between `zon` and `zod`. Those mostly stem from the fact that Python does not have type inference like Typescript has. There are other slight deviations between `zon` and `zod`. 
 
+### General
+
+#### Chaining
+
+You may also use chaining.
+
+```python
+validator = zon.number().gt(1)
+```
+
+is equivalent to
+
+```python
+validator = zon.number()
+validator.gt(1)
+```
+
 ### Basic types
 
 `zon` features most of `zod`'s basic types:
