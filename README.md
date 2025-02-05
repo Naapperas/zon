@@ -147,7 +147,7 @@ zon.element_list(zon.string())
 Like strings, lists also have some extra methods that check the length of the list:
 
 ```python
-validator = zon.list(...)
+validator = zon.element_list(...)
 
 validator.min(5)
 validator.max(10)
@@ -187,7 +187,7 @@ validator = zon.record({
     "name": zon.string(),
     "age": zon.number(),
     "isAwesome": zon.boolean(),
-    "friends": zon.array(zon.string()),
+    "friends": zon.element_list(zon.string()),
     "address": zon.record({
         "street": zon.string(),
         "city": zon.string(),
