@@ -49,8 +49,17 @@ To validate against a schema, use `validator.validate()`
 
 ```python
 validator = zon.string()
-validator.validate("Hello World!") # returns 'Hello World!'
+message = validator.validate("Hello World!") # returns 'Hello World!'
 ```
+
+Alternatively, you may use `validator.safe_validate()`.
+`save_validate` will tell you whether the validation was successful, without throwing an error. Depending on the needs of your project, you can do this to handle exceptions more elegantly.
+
+```python
+validator = zon.string()
+success, message = validator.safe_validate("Hello World!") # returns (True, 'Hello World!')
+```
+
 
 ### Basic types
 
