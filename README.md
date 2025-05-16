@@ -60,6 +60,22 @@ validator = zon.string()
 success, message = validator.safe_validate("Hello World!") # returns (True, 'Hello World!')
 ```
 
+#### Chaining
+
+Most validators can be chained together, just like `zod`:
+
+```python
+validator = zon.string().min(5).max(10).email()
+```
+
+This is equivalent to:
+
+```python
+validator = zon.string()
+validator = validator.min(5)
+validator = validator.max(10)
+validator = validator.email()
+```
 
 ### Basic types
 

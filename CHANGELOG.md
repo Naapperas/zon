@@ -11,6 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated contribution guidelines.
 - Updated CI workflow to run on Pull Request.
 
+### Added
+- Added explanation about chaining API to README.md.
+
 ## [2.0.1] - 2024-07-16
 
 ### Changed
