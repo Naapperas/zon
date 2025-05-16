@@ -6,7 +6,7 @@ Flexible validation powered by Python with the expressiveness of a Zod-like API.
 # Why is this needed even?
 from __future__ import annotations
 
-__version__ = "2.0.0"
+__version__ = "3.0.0"
 __author__ = "Nuno Pereira"
 __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
@@ -181,7 +181,9 @@ class Zon(ABC):
         )
 
     @final
-    def _validate(self, data: T) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
+    def _validate(
+        self, data: T
+    ) -> tuple[Literal[True], T] | tuple[Literal[False], ZonError]:
         """Validates the supplied data.
 
         Args:
