@@ -41,6 +41,42 @@ In its essence, `zon` behaves much like `zod`. If you have used `zod`, you will 
 > [!NOTE]  
 > There are some differences in the public API between `zon` and `zod`. Those mostly stem from the fact that Python does not have type inference like Typescript has. There are other slight deviations between `zon` and `zod`. 
 
+### General
+
+#### Validate
+
+To validate against a schema, use `validator.validate()`
+
+```python
+validator = zon.string()
+message = validator.validate("Hello World!") # returns 'Hello World!'
+```
+
+Alternatively, you may use `validator.safe_validate()`.
+`save_validate` will tell you whether the validation was successful, without throwing an error. Depending on the needs of your project, you can do this to handle exceptions more elegantly.
+
+```python
+validator = zon.string()
+success, message = validator.safe_validate("Hello World!") # returns (True, 'Hello World!')
+```
+
+#### Chaining
+
+Most validators can be chained together, just like `zod`:
+
+```python
+validator = zon.string().min(5).max(10).email()
+```
+
+This is equivalent to:
+
+```python
+validator = zon.string()
+validator = validator.min(5)
+validator = validator.max(10)
+validator = validator.email()
+```
+
 ### Basic types
 
 `zon` features most of `zod`'s basic types:
@@ -147,7 +183,7 @@ zon.element_list(zon.string())
 Like strings, lists also have some extra methods that check the length of the list:
 
 ```python
-validator = zon.list(...)
+validator = zon.element_list(...)
 
 validator.min(5)
 validator.max(10)
@@ -187,7 +223,7 @@ validator = zon.record({
     "name": zon.string(),
     "age": zon.number(),
     "isAwesome": zon.boolean(),
-    "friends": zon.array(zon.string()),
+    "friends": zon.element_list(zon.string()),
     "address": zon.record({
         "street": zon.string(),
         "city": zon.string(),

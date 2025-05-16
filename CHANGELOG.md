@@ -5,7 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
 ## [Unreleased]
+
+## [3.0.0] - 2025-05-16
+
+### Changed
+- Updated contribution guidelines.
+- Updated CI workflow to run on Pull Request.
+- Updated README.md to include more information and examples of code usage as well as corrected some old examples.
+- Added contributors to the CONTRIBUTORS file.
+
+### Deleted
+- Removed `uuid` as a dependency.
+
+### Added
+- Added explanation about chaining API to README.md.
 
 ## [2.0.1] - 2024-07-16
 
@@ -57,7 +72,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added base source code files for the project.
 - Base `README.md` file.
 
-[unreleased]: https://github.com/Naapperas/zon/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/Naapperas/zon/compare/v3.0.0...HEAD
+[3.0.0]: https://github.com/Naapperas/zon/compare/v2.0.1...v3.0.0
 [2.0.1]: https://github.com/Naapperas/zon/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/Naapperas/zon/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/Naapperas/zon/compare/v1.0.0...v1.1.0
