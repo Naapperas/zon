@@ -53,7 +53,7 @@ message = validator.validate("Hello World!") # returns 'Hello World!'
 ```
 
 Alternatively, you may use `validator.safe_validate()`.
-`save_validate` will tell you whether the validation was successful, without throwing an error. Depending on the needs of your project, you can do this to handle exceptions more elegantly.
+`safe_validate` will tell you whether the validation was successful, without throwing an error. Depending on the needs of your project, you can do this to handle exceptions more elegantly.
 
 ```python
 validator = zon.string()
