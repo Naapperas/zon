@@ -6,7 +6,7 @@ Flexible validation powered by Python with the expressiveness of a Zod-like API.
 # Why is this needed even?
 from __future__ import annotations
 
-__version__ = "3.0.0"
+__version__ = "3.0.1"
 __author__ = "Nuno Pereira"
 __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
