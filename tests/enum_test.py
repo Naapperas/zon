@@ -40,9 +40,6 @@ def test_enum_safe_validate(validator):
 
 
 def test_enum_exclude(validator):
-
-    # TODO: test through validation
-
     assert validator.exclude(["1"]).enum == {"2", "3", "4", "5"}
     assert validator.exclude(["2"]).enum == {"1", "3", "4", "5"}
     assert validator.exclude(["3"]).enum == {"1", "2", "4", "5"}
@@ -51,9 +48,6 @@ def test_enum_exclude(validator):
 
 
 def test_enum_extract(validator):
-
-    # TODO: test through validation
-
     assert validator.extract(["1"]).enum == {
         "1",
     }
