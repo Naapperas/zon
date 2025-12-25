@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Path population on ZonIssue instances for better tracking what caused an error.
+
 ## [3.0.0] - 2025-05-16
 
 ### Changed
