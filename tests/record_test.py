@@ -49,7 +49,7 @@ def test_record_validate(validator):
         )
 
 
-def test_record_sage_validate(validator):
+def test_record_safe_validate(validator):
     assert validator.safe_validate(
         {
             "name": "John",
@@ -335,3 +335,56 @@ def test_record_unknown_key_policy_passthrough(validator):
         "age": 1,
         "unknown": 1,
     }
+
+
+def test_record_error_paths(validator):
+    """Test that validation errors for record fields have correct paths"""
+    # Test field validation error path
+    result = validator.safe_validate(
+        {
+            "name": "",  # Too short (violates min(1))
+            "age": 1,
+        }
+    )
+    assert result[0] is False
+    issues = result[1].issues
+    assert len(issues) == 1
+    assert issues[0].path == ["name"]
+
+    # Test another field validation error path
+    result = validator.safe_validate(
+        {
+            "name": "John",
+            "age": -5,  # Not positive
+        }
+    )
+    assert result[0] is False
+    issues = result[1].issues
+    assert len(issues) == 1
+    assert issues[0].path == ["age"]
+
+    # Test multiple field validation errors
+    result = validator.safe_validate(
+        {
+            "name": "",  # Too short
+            "age": -5,  # Not positive
+        }
+    )
+    assert result[0] is False
+    issues = result[1].issues
+    assert len(issues) == 2
+    paths = [issue.path for issue in issues]
+    assert ["name"] in paths
+    assert ["age"] in paths
+
+    # Test with missing required field
+    result = validator.safe_validate(
+        {
+            "name": "John",
+            # age missing
+        }
+    )
+    assert result[0] is False
+    issues = result[1].issues
+    # Missing field should also have the field name in the path
+    assert any(issue.path == ["age"] for issue in issues)
