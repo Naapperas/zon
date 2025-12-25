@@ -6,7 +6,7 @@ Flexible validation powered by Python with the expressiveness of a Zod-like API.
 # Why is this needed even?
 from __future__ import annotations
 
-__version__ = "3.0.0"
+__version__ = "3.0.1"
 __author__ = "Nuno Pereira"
 __email__ = "nunoafonso2002@gmail.com"
 __license__ = "MIT"
@@ -1263,7 +1263,16 @@ class ZonRecord(Zon):
             (validated, data_or_error) = zon.safe_validate(validation_value)
 
             if not validated:
-                ctx.add_issues(data_or_error.issues)
+                updated_issues = [
+                    ZonIssue(
+                        value=issue.value,
+                        message=issue.message,
+                        path=[key] + issue.path,
+                    )
+                    for issue in data_or_error.issues
+                ]
+
+                ctx.add_issues(updated_issues)
             elif data_or_error is not None:  # in case of optional data
                 data_to_return[key] = data_or_error
 
@@ -1291,7 +1300,16 @@ class ZonRecord(Zon):
                 (valid, data_or_error) = self._catchall.safe_validate(value)
 
                 if not valid:
-                    ctx.add_issues(data_or_error.issues)
+                    updated_issues = [
+                        ZonIssue(
+                            value=issue.value,
+                            message=issue.message,
+                            path=[key] + issue.path,
+                        )
+                        for issue in data_or_error.issues
+                    ]
+
+                    ctx.add_issues(updated_issues)
                 elif data_or_error is not None:  # in case of optional data
                     data_to_return[key] = data_or_error
 
@@ -1528,11 +1546,21 @@ class ZonList(ZonContainer):
             ctx.add_issue(ZonIssue(value=data, message="Not a valid list", path=[]))
             return data
 
-        for element in data:
+        for i, element in enumerate(data):
             (valid, data_or_error) = self._element.safe_validate(element)
 
             if not valid:
-                ctx.add_issues(data_or_error.issues)
+
+                updated_issues = [
+                    ZonIssue(
+                        value=issue.value,
+                        message=issue.message,
+                        path=[str(i)] + issue.path,
+                    )
+                    for issue in data_or_error.issues
+                ]
+
+                ctx.add_issues(updated_issues)
 
         return data
 
@@ -1645,14 +1673,32 @@ class ZonTuple(Zon):
             (valid, data_or_error) = _validator.safe_validate(data[i])
 
             if not valid:
-                ctx.add_issues(data_or_error.issues)
+                updated_issues = [
+                    ZonIssue(
+                        value=issue.value,
+                        message=issue.message,
+                        path=[str(i)] + issue.path,
+                    )
+                    for issue in data_or_error.issues
+                ]
+
+                ctx.add_issues(updated_issues)
 
         if self._rest is not None:
-            for extra_value in data[len(self.items) :]:
+            for i, extra_value in enumerate(data[len(self.items) :]):
                 (valid, data_or_error) = self._rest.safe_validate(extra_value)
 
                 if not valid:
-                    ctx.add_issues(data_or_error.issues)
+                    updated_issues = [
+                        ZonIssue(
+                            value=issue.value,
+                            message=issue.message,
+                            path=[str(i)] + issue.path,
+                        )
+                        for issue in data_or_error.issues
+                    ]
+
+                    ctx.add_issues(updated_issues)
 
         return data
 
