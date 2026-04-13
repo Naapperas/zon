@@ -1,7 +1,7 @@
 black==24.3.0
 build==1.0.3
 pylint==3.0.2
-pytest==7.4.3
+pytest==9.0.3
 twine
 validators==0.28.3
 typing_extensions==4.12.2
